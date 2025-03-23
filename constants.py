@@ -1,3 +1,5 @@
+"""Global constants for the game."""
+
 width = 1020
 height = 620
 title = "Awaking"

@@ -1,8 +1,14 @@
+"""Class representing the player with animations and movement."""
+
 import pygame
 import os
 
+
 class Player(pygame.sprite.Sprite):
+    """Handles the logic and animations of the player."""
+
     def __init__(self, pos, animation_paths, speed=5, scale=1.0):
+        """Initializes the player with position and animations."""
         super().__init__()
         self.speed = speed
         self.scale = scale  
@@ -19,6 +25,7 @@ class Player(pygame.sprite.Sprite):
 
 
     def load_animations(self, animation_paths):
+        """Loads animations from files."""
         for animation_name, path in animation_paths.items():
             frames = []
             for frame_name in sorted(os.listdir(path)):
@@ -35,12 +42,14 @@ class Player(pygame.sprite.Sprite):
 
 
     def scale_image(self, image):
+        """Scales an image according to the scale factor."""
         new_width = int(image.get_width() * self.scale)
         new_height = int(image.get_height() * self.scale)
         return pygame.transform.scale(image, (new_width, new_height)).convert_alpha()
 
 
     def animate(self, dt):
+        """Updates the player's animation."""
         self.animation_timer += dt
         while self.animation_timer >= self.animation_speed:
             self.animation_timer -= self.animation_speed
@@ -52,11 +61,13 @@ class Player(pygame.sprite.Sprite):
 
 
     def update(self, dt):
+        """Updates the player's position and animation."""
         self.animate(dt)
         self.rect.center += self.direction * self.speed * dt
 
 
     def set_animation(self, animation_name):
+        """Changes the player's current animation."""
         if self.current_animation != animation_name:
             self.current_animation = animation_name
             self.frame_index = 0
@@ -64,6 +75,7 @@ class Player(pygame.sprite.Sprite):
 
 
     def move(self, direction):
+        """Moves the player in a specific direction."""
         self.direction = direction
         if direction.length() > 0:
             self.set_animation('walking')
@@ -78,4 +90,5 @@ class Player(pygame.sprite.Sprite):
 
 
     def attack(self):
+        """Starts the attack animation."""
         self.set_animation('attack')

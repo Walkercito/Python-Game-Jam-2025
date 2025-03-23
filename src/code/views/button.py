@@ -1,8 +1,14 @@
+"""Button class for interactive UI elements."""
+
 import pygame
 from constants import font_path, font_sizes, font_colors
 
+
 class Button:
+    """Represents a clickable button with hover effects."""
+
     def __init__(self, text, x, y, width, height, on_click, image_path=None, border_size=12, use_9slice=True):
+        """Initializes the button with text, position, and behavior."""
         self.text = text
         self.original_x = x
         self.original_y = y
@@ -21,21 +27,18 @@ class Button:
         if self.image_path:
             self.load_image()
 
-
     def load_image(self):
-        """Loads the image from the specified path"""
+        """Loads the button's background image."""
         try:
             self.image = pygame.image.load(self.image_path).convert_alpha()
             self.scale_image()
-            # create illuminated version for hover state
             self.create_hover_image()
         except pygame.error as e:
             print(f"Error loading image: {e}")
             self.image = None
 
-
     def create_hover_image(self):
-        """ Creates a brighter version of the image for hover effect """
+        """Creates a brighter version of the image for hover effect."""
         if not self.image:
             return
             
@@ -52,22 +55,19 @@ class Button:
         self.hover_image = hover_img
         self.scale_hover_image()
 
-
     def resize(self, scale_x, scale_y):
-        """ Adjust the button size and position """
+        """Adjusts the button size and position when resized."""
         self.rect.x = self.original_x * scale_x
         self.rect.y = self.original_y * scale_y
         self.rect.width = self.original_width * scale_x
         self.rect.height = self.original_height * scale_y
 
-
         if self.image:
             self.scale_image()
             self.scale_hover_image()
 
-
     def scale_image(self):
-        """Scales the image to fit the button size"""
+        """Scales the image to fit the button size."""
         if not self.image:
             return
             
@@ -76,9 +76,8 @@ class Button:
         else:
             self.scaled_image = pygame.transform.scale(self.image, (self.rect.width, self.rect.height)).convert_alpha()
 
-
     def scale_hover_image(self):
-        """Scales the hover image to fit the button size"""
+        """Scales the hover image to fit the button size."""
         if not self.hover_image:
             return
             
@@ -87,16 +86,13 @@ class Button:
         else:
             self.scaled_hover_image = pygame.transform.scale(self.hover_image, (self.rect.width, self.rect.height))
 
-
     def scale_9slice(self, source_image):
-        """Scales the image using 9-slice technique to preserve corners and borders"""
-        # create a new surface of button size
+        """Scales the image using 9-slice technique to preserve corners and borders."""
         result = pygame.Surface((self.rect.width, self.rect.height), pygame.SRCALPHA)
 
         orig_width = source_image.get_width()
         orig_height = source_image.get_height()
         
-        # make sure the border is not larger than half the image size
         border = min(self.border_size, orig_width // 2, orig_height // 2)
 
         corner_tl = source_image.subsurface((0, 0, border, border))
@@ -130,14 +126,12 @@ class Button:
         result.blit(scaled_center, (border, border))
         return result
 
-
     def check_hover(self, mouse_pos):
-        """ Verify if the mouse is hovering over the button """
+        """Checks if the mouse is hovering over the button."""
         self.hovered = self.rect.collidepoint(mouse_pos)
 
-
     def draw(self, screen):
-        """ Draw the button on the screen """
+        """Draws the button on the screen."""
         if self.scaled_image:
             if self.hovered and hasattr(self, 'scaled_hover_image'):
                 screen.blit(self.scaled_hover_image, self.rect)
@@ -146,7 +140,6 @@ class Button:
         else:
             color = (200, 200, 200) if not self.hovered else (255, 255, 255)
             pygame.draw.rect(screen, color, self.rect)
-
 
         font = pygame.font.Font(font_path, font_sizes["medium"])
         text_surface = font.render(self.text, True, font_colors["button"])

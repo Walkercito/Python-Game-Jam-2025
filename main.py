@@ -1,11 +1,19 @@
+"""Main game loop and initialization."""
+
 import pygame
 import constants as const
 from src.code.views.main_menu import MainMenu
+from src.code.views.game_view import GameView
 from src.code.views.loading_screen import LoadingScreen
 import asyncio
+from sys import exit
+
 
 class Game:
+    """Main game class handling initialization and the game loop."""
+
     def __init__(self):
+        """Initializes the game window and resources."""
         pygame.init()
 
         self.animation_paths = {
@@ -38,8 +46,8 @@ class Game:
         self.switch_view("main")
         self.handle_resize()
 
-
     def handle_resize(self):
+        """Adjusts the game elements when the window is resized."""
         scale = min(
             self.WIDTH / self.design_width, 
             self.HEIGHT / self.design_height
@@ -49,20 +57,18 @@ class Game:
         if self.current_view:
             self.current_view.handle_resize(self.WIDTH, self.HEIGHT)
 
-
     def switch_view(self, view_name):
+        """Switches between different game views."""
         if view_name == "main":
             self.current_view = MainMenu(
-                switch_view = self.switch_view,
-                design_width = self.design_width,
-                design_height = self.design_height  
+                switch_view=self.switch_view,
+                design_width=self.design_width,
+                design_height=self.design_height  
             )
             self.pending_view = None
         elif view_name == "game":
             self.pending_view = "game"
             self.transition_screen = LoadingScreen(self.design_width, self.design_height)
-            # Crear una tarea asíncrona para la carga
-            asyncio.create_task(self.load_game_resources())
         elif view_name == "settings":
             pass
         elif view_name == "exit":
@@ -70,9 +76,8 @@ class Game:
         
         self.handle_resize()
 
-
     def handle_transition(self):
-        """Maneja la lógica de transición entre vistas"""
+        """Handles the transition logic between views."""
         if self.pending_view == "game":
             self.transition_screen.update_fade()
 
@@ -80,38 +85,40 @@ class Game:
                 if self.transition_screen.alpha < 255:
                     return True
                 else:
-                    self.load_game_resources()
+                    # Start loading and disable fade-in
+                    if not hasattr(self, 'load_task'):
+                        self.load_task = asyncio.create_task(self.load_game_resources())
                     return True
-
             else:
+                # Fade-out after loading
                 if self.transition_screen.alpha > 0:
                     return True
                 else:
                     self.transition_screen = None
+                    self.pending_view = None
+                    del self.load_task  # Clean up the task
                     return False
 
-
     async def load_game_resources(self):
-        """Carga asíncrona de los recursos del juego"""
+        """Asynchronously loads game resources."""
         total_steps = 5
         for i in range(total_steps):
-            await asyncio.sleep(0.3)  # Simulando carga
+            await asyncio.sleep(0.3)
             self.transition_screen.update_progress((i + 1) * 20)
             self.render_transition()
             pygame.event.pump()
 
-        # Crear la vista del juego cuando la carga termine
+        # Create GameView and activate fade-out
         self.current_view = GameView(
             switch_view=self.switch_view,
             animation_paths=self.animation_paths,
             clock=self.clock,
             font=self.font
         )
-        self.transition_screen.active = False
-
+        self.transition_screen.active = False  # Start fade-out
 
     def render_transition(self):
-        """Renderiza la pantalla de transición"""
+        """Renders the transition screen."""
         self.window.fill(const.black)
 
         if self.current_view:
@@ -121,8 +128,8 @@ class Game:
         pygame.display.flip()
         self.clock.tick(60)
 
-
     def update(self):
+        """Updates the game state."""
         self.window.fill(const.black)
         if self.current_view:
             self.current_view.draw(self.window)
@@ -130,13 +137,14 @@ class Game:
         if self.transition_screen:
             self.transition_screen.draw(self.window)
 
-
     async def run(self):
-        """Método principal del juego, ahora asíncrono"""
+        """Main game loop, now asynchronous."""
         running = True
         while running:
             dt = self.clock.tick(self.FPS) / 1000.0
             events = pygame.event.get()
+
+            await asyncio.sleep(0)
 
             if self.transition_screen and self.handle_transition():
                 self.render_transition()
@@ -163,10 +171,10 @@ class Game:
             pygame.display.flip()
 
         pygame.quit()
-
+        exit()
 
     def toggle_fullscreen(self):
-        """Alternar modo pantalla completa"""
+        """Toggles fullscreen mode."""
         self.fullscreen = not self.fullscreen
         if self.fullscreen:
             self.windowed_size = (self.WIDTH, self.HEIGHT)
@@ -176,7 +184,6 @@ class Game:
         
         self.WIDTH, self.HEIGHT = self.window.get_size()
         self.handle_resize()
-
 
 
 if __name__ == '__main__':
