@@ -59,7 +59,7 @@ class Game:
 
     def update(self):
         """ Update game logic """
-        self.window.fill(const.white)
+        self.window.fill(const.black)
         
         # draw current view
         if self.current_view:

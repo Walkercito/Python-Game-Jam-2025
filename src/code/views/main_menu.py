@@ -10,29 +10,43 @@ class MainMenu:
 
 
     def create_buttons(self):
+        button_border = "src/assets/PNG/Default/Border/panel-border-003.png"
+        
         self.buttons.append(Button(
             text = "Play",
             x = 300, y = 200,
-            width = 200, height = 50,
-            on_click = lambda: print("Starting game")
+            width = 200, height = 60,
+            on_click = lambda: print("Starting game"),
+            image_path = button_border,
+            border_size = 16,
+            use_9slice = True
         ))
         self.buttons.append(Button(
             text = "Settings",
-            x = 300, y = 300,
-            width = 200, height = 50,
-            on_click = lambda: self.switch_view("settings")
+            x = 300, y = 270,
+            width = 200, height = 60,
+            on_click = lambda: self.switch_view("settings"),
+            image_path = button_border,
+            border_size = 12,
+            use_9slice = True
         ))
         self.buttons.append(Button(
             text = "Credits",
-            x = 300, y = 400,
-            width = 200, height = 50,
-            on_click = lambda: self.switch_view("credits")
+            x = 300, y = 340,
+            width = 200, height = 60,
+            on_click = lambda: self.switch_view("credits"),
+            image_path = button_border,
+            border_size = 12,
+            use_9slice = True
         ))
         self.buttons.append(Button(
             text = "Exit",
-            x = 300, y = 500,
-            width = 200, height = 50,
-            on_click = lambda: self.switch_view("exit")
+            x = 300, y = 410,
+            width = 200, height = 60,
+            on_click = lambda: self.switch_view("exit"),
+            image_path = button_border,
+            border_size = 12,
+            use_9slice = True
         ))
 
 
