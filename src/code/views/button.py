@@ -1,4 +1,5 @@
 import pygame
+from constants import font_path, font_sizes, font_colors
 
 
 class Button:
@@ -147,8 +148,8 @@ class Button:
             color = (200, 200, 200) if not self.hovered else (255, 255, 255)
             pygame.draw.rect(screen, color, self.rect)
 
-
-        font = pygame.font.Font(None, 36)
-        text_surface = font.render(self.text, True, (0, 0, 0))
+        # Update to use centralized font and color
+        font = pygame.font.Font(font_path, font_sizes["medium"])
+        text_surface = font.render(self.text, True, font_colors["button"])
         text_rect = text_surface.get_rect(center=self.rect.center)
         screen.blit(text_surface, text_rect)
