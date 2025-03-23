@@ -62,7 +62,10 @@ class Player(pygame.sprite.Sprite):
 
     def update(self, dt):
         """Updates the player's position and animation."""
-        self.animate(dt)
+        min_dt = 0.016  # equivalent to about 60fps
+        effective_dt = max(dt, min_dt)
+
+        self.animate(effective_dt)
         self.rect.center += self.direction * self.speed * dt
 
 

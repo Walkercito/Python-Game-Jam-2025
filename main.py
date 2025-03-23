@@ -60,11 +60,13 @@ class Game:
     def switch_view(self, view_name):
         """Switches between different game views."""
         if view_name == "main":
+            pygame.mouse.set_visible(True)
             self.current_view = MainMenu(
                 switch_view=self.switch_view,
                 design_width=self.design_width,
                 design_height=self.design_height  
             )
+            pygame.event.set_allowed([pygame.MOUSEMOTION, pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP])
             self.pending_view = None
         elif view_name == "game":
             self.pending_view = "game"
@@ -115,6 +117,8 @@ class Game:
             clock=self.clock,
             font=self.font
         )
+        pygame.event.set_blocked([pygame.MOUSEMOTION, pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP])
+        pygame.mouse.set_visible(False),
         self.transition_screen.active = False  # Start fade-out
 
     def render_transition(self):
@@ -140,6 +144,7 @@ class Game:
     async def run(self):
         """Main game loop, now asynchronous."""
         running = True
+        
         while running:
             dt = self.clock.tick(self.FPS) / 1000.0
             events = pygame.event.get()

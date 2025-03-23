@@ -27,7 +27,11 @@ class GameView:
 
     def handle_events(self, events):
         """Handles input events."""
+        filtered_events = []
         for event in events:
+            if event.type not in (pygame.MOUSEMOTION, pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP):
+                filtered_events.append(event)
+
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 self.switch_view("main")
 
@@ -46,7 +50,9 @@ class GameView:
 
     def update(self, dt):
         """Updates the game logic."""
-        self.player.update(dt)
+        if dt > 0:
+            self.player.update(dt)
+
 
     def draw(self, screen):
         """Draws the game elements."""
