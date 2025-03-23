@@ -142,19 +142,31 @@ class Game:
             self.transition_screen.draw(self.window)
 
     async def run(self):
-        """Main game loop, now asynchronous."""
+        """Main game loop, now asynchronous with guaranteed animation updates."""
         running = True
+        last_time = pygame.time.get_ticks() / 1000.0
         
         while running:
-            dt = self.clock.tick(self.FPS) / 1000.0
+            # Calculate delta time properly
+            current_time = pygame.time.get_ticks() / 1000.0
+            dt = current_time - last_time
+            last_time = current_time
+            
+            # Ensure a minimum dt value to prevent animation freezing
+            dt = max(dt, 0.001)  # Minimum 1ms dt
+            
+            # Get and process events
             events = pygame.event.get()
+            pygame.event.pump()  # Process internal events
+            
+            await asyncio.sleep(0)  # Allow other async operations
 
-            await asyncio.sleep(0)
-
+            # Handle transition screens
             if self.transition_screen and self.handle_transition():
                 self.render_transition()
                 continue
 
+            # Process events
             for event in events:
                 if event.type == pygame.QUIT:
                     running = False
@@ -167,13 +179,19 @@ class Game:
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_f:
                         self.toggle_fullscreen()
-                if self.current_view:
-                    self.current_view.handle_events(events)
-                    if hasattr(self.current_view, "update"):
-                        self.current_view.update(dt)
+                        
+            # Update the current view
+            if self.current_view:
+                self.current_view.handle_events(events)
+                if hasattr(self.current_view, "update"):
+                    self.current_view.update(dt)
 
+            # Draw everything
             self.update()
             pygame.display.flip()
+            
+            # Regulate frame rate
+            self.clock.tick(self.FPS)
 
         pygame.quit()
         exit()

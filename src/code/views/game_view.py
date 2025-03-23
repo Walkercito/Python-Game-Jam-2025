@@ -24,6 +24,8 @@ class GameView:
             scale = 0.5
         )
         self.current_scale = 1.0
+        self.last_update_time = pygame.time.get_ticks()
+        self.frame_time = 0
 
     def handle_events(self, events):
         """Handles input events."""
@@ -49,10 +51,24 @@ class GameView:
         self.player.move(direction)
 
     def update(self, dt):
-        """Updates the game logic."""
-        if dt > 0:
+        """Updates the game logic with frame-independent timing."""
+        # Calculate our own dt as a fallback mechanism
+        current_time = pygame.time.get_ticks()
+        if dt <= 0:  # If dt from the main loop is zero or negative
+            dt = (current_time - self.last_update_time) / 1000.0
+        self.last_update_time = current_time
+        
+        # Ensure minimum dt to keep animations running
+        min_dt = 0.016  # ~60fps
+        dt = max(dt, min_dt)
+        
+        # Force animation update at regular intervals
+        self.frame_time += dt
+        if self.frame_time >= 0.016:  # ~60fps frame rate
+            self.player.update(self.frame_time)
+            self.frame_time = 0
+        else:
             self.player.update(dt)
-
 
     def draw(self, screen):
         """Draws the game elements."""
