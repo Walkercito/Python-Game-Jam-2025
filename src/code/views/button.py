@@ -1,7 +1,6 @@
 import pygame
 from constants import font_path, font_sizes, font_colors
 
-
 class Button:
     def __init__(self, text, x, y, width, height, on_click, image_path=None, border_size=12, use_9slice=True):
         self.text = text
@@ -73,9 +72,9 @@ class Button:
             return
             
         if self.use_9slice and self.image.get_width() >= self.border_size * 2 and self.image.get_height() >= self.border_size * 2:
-            self.scaled_image = self.scale_9slice(self.image)
+            self.scaled_image = self.scale_9slice(self.image).convert_alpha()
         else:
-            self.scaled_image = pygame.transform.scale(self.image, (self.rect.width, self.rect.height))
+            self.scaled_image = pygame.transform.scale(self.image, (self.rect.width, self.rect.height)).convert_alpha()
 
 
     def scale_hover_image(self):
@@ -148,7 +147,7 @@ class Button:
             color = (200, 200, 200) if not self.hovered else (255, 255, 255)
             pygame.draw.rect(screen, color, self.rect)
 
-        # Update to use centralized font and color
+
         font = pygame.font.Font(font_path, font_sizes["medium"])
         text_surface = font.render(self.text, True, font_colors["button"])
         text_rect = text_surface.get_rect(center=self.rect.center)

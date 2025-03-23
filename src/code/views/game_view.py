@@ -1,21 +1,25 @@
 import pygame
-#from utils import draw_fps
+
+from utils import draw_fps
 from src.code.player.player import Player
 from constants import width, height, gray
 
 
 class GameView:
-    def __init__(self, switch_view, animation_paths):
+    def __init__(self, switch_view, animation_paths, clock, font):
         self.switch_view = switch_view
         self.design_width = width
         self.design_height = height
-
+        self.clock = clock
+        self.font = font
+        
         self.player = Player(
-            pos = (width // 2, height // 2), 
-            animation_paths=animation_paths,
-            speed = 5,
+            pos = (width // 2, height // 2),  
+            animation_paths = animation_paths,
+            speed = 200,
             scale = 0.5
         )
+        self.current_scale = 1.0
 
 
     def handle_events(self, events):
@@ -23,7 +27,6 @@ class GameView:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     self.switch_view("main")
-
         keys = pygame.key.get_pressed()
         direction = pygame.math.Vector2(0, 0)
         
@@ -42,18 +45,18 @@ class GameView:
         self.player.move(direction)
 
 
-    def update(self):
-        self.player.update()
+    def update(self, dt):
+        self.player.update(dt)
 
 
     def draw(self, screen):
         screen.fill(gray)
-        #draw_fps(screen, clock, font, screen.get_width())
+        draw_fps(screen, self.clock, self.font, screen.get_width())
         screen.blit(self.player.image, self.player.rect)
 
 
     def handle_resize(self, new_width, new_height):
         scale_x = new_width / self.design_width
         scale_y = new_height / self.design_height
-
-
+        self.player.rect.center = (new_width // 2, new_height // 2)
+        self.player.speed = 200 * scale_x 
