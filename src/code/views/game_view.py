@@ -4,6 +4,7 @@ import pygame
 from utils import draw_fps
 from src.code.player.player import Player
 from constants import width, height, gray
+from src.code.map.tile import TileMap
 
 
 class GameView:
@@ -27,6 +28,9 @@ class GameView:
         self.current_scale = 1.0
         self.last_update_time = pygame.time.get_ticks()
         self.frame_time = 0
+
+        # Load the map
+        self.map = TileMap('./src/assets/map/floor.tmx')
 
     def handle_events(self, events):
         """Handles input events."""
@@ -57,10 +61,17 @@ class GameView:
         self.player.update(dt)
 
     def draw(self, screen):
-        """Draws the game elements."""
+        """Draws game elements."""
         screen.fill(gray)
-        draw_fps(screen, self.clock, self.font, screen.get_width(), self.show_fps)
+        
+        # Dibujar el mapa primero
+        self.map.draw(screen)
+        
+        # Dibujar el jugador
         screen.blit(self.player.image, self.player.rect)
+        
+        # Dibujar FPS
+        draw_fps(screen, self.clock, self.font, screen.get_width(), self.show_fps)
 
     def handle_resize(self, new_width, new_height):
         """Adjusts the view when the window is resized."""
