@@ -10,17 +10,7 @@ class Settings:
 
     def __init__(self, switch_view, design_width=const.width, design_height=const.height, 
                 get_game_state=None, toggle_fullscreen=None, is_ingame=False, return_to_game=None):
-        """Initializes the settings menu with buttons and options.
-        
-        Args:
-            switch_view: Function to switch between game views
-            design_width: Design width of the game
-            design_height: Design height of the game
-            get_game_state: Function to get the current game state values
-            toggle_fullscreen: Function to toggle fullscreen mode
-            is_ingame: Boolean indicating if settings is opened from in-game
-            return_to_game: Function to return to the game after settings are closed
-        """
+        """Initializes the settings menu with buttons and options."""
         self.switch_view = switch_view
         self.design_width = design_width
         self.design_height = design_height
@@ -65,7 +55,6 @@ class Settings:
             use_9slice = True
         ))
         
-        # Exit button when in-game
         if self.is_ingame:
             self.buttons.append(Button(
                 text = "Menu",
@@ -94,22 +83,21 @@ class Settings:
                 use_9slice = True
             ))
         elif self.is_ingame:
-            # Disabled fullscreen button when in-game (with shortened text)
             self.buttons.append(Button(
                 text = "Fullscreen",
                 x = self.design_width//2 - 150,
                 y = 200,
                 width = 300,
                 height = 60,
-                on_click = None,  # No action when clicked
+                on_click = None,
                 image_path = button_border,
                 border_size = 12,
                 use_9slice = True,
-                disabled = True  # Visually indicate button is disabled
+                disabled = True
             ))
         
-        # Show FPS toggle button - always available
-        y_position = 300  # Default position
+       
+        y_position = 300 
         if not self.is_ingame and self.toggle_fullscreen is not None:
             y_position = 300
         elif self.is_ingame:
@@ -149,7 +137,6 @@ class Settings:
         fps_text = "Show FPS: ON" if self.show_fps else "Show FPS: OFF"
         self.buttons[-1].text = fps_text
         
-        # Update game state (will be handled in main.py)
     
     def handle_events(self, events):
         """Handles input events for the settings menu."""
@@ -181,7 +168,6 @@ class Settings:
         # Always update back button position
         self.buttons[0].rect.y = new_height - 80
         
-        # Update settings buttons positions (centered horizontally)
         fullscreen_button_index = 2 if self.is_ingame else 1
         fps_button_index = 3 if self.is_ingame else 2
         
@@ -193,14 +179,11 @@ class Settings:
     
     def draw(self, screen):
         """Draws the settings menu and its options."""
-        # Draw background
         screen.fill((30, 30, 30))
         
-        # Draw title
         title_text = self.title_font.render("Settings", True, (255, 255, 255))
         title_rect = title_text.get_rect(centerx=screen.get_width()//2, y=50)
         screen.blit(title_text, title_rect)
         
-        # Draw buttons
         for button in self.buttons:
             button.draw(screen)

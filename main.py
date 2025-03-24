@@ -99,13 +99,13 @@ class Game:
                 self.saved_game_view = self.current_view
             
             self.current_view = Settings(
-                switch_view=self.switch_view,
-                design_width=self.design_width,
-                design_height=self.design_height,
-                get_game_state=self.get_game_state,
-                toggle_fullscreen=None,  # Disable fullscreen toggle
-                is_ingame=True,          # Flag to indicate in-game settings
-                return_to_game=lambda: self.return_to_game()  # Method to return to game
+                switch_view = self.switch_view,
+                design_width = self.design_width,
+                design_height = self.design_height,
+                get_game_state = self.get_game_state,
+                toggle_fullscreen = None,
+                is_ingame = True,          # Flag to indicate in-game settings
+                return_to_game = lambda: self.return_to_game()
             )
             pygame.event.set_allowed([pygame.MOUSEMOTION, pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP])
             self.pending_view = None
@@ -142,7 +142,7 @@ class Game:
                 else:
                     self.transition_screen = None
                     self.pending_view = None
-                    del self.load_task  # Clean up the task
+                    del self.load_task
                     return False
 
     async def load_game_resources(self):
@@ -156,11 +156,11 @@ class Game:
 
         # Create GameView and activate fade-out
         self.current_view = GameView(
-            switch_view=self.switch_view,
-            animation_paths=self.animation_paths,
-            clock=self.clock,
-            font=self.font,
-            show_fps=self.show_fps
+            switch_view = self.switch_view,
+            animation_paths = self.animation_paths,
+            clock = self.clock,
+            font = self.font,
+            show_fps = self.show_fps
         )
         pygame.event.set_blocked([pygame.MOUSEMOTION, pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP])
         pygame.mouse.set_visible(False),
@@ -196,15 +196,12 @@ class Game:
         last_time = pygame.time.get_ticks() / 1000.0
         
         while running:
-            # Calculate delta time properly
             current_time = pygame.time.get_ticks() / 1000.0
             dt = current_time - last_time
             last_time = current_time
             
-            # Ensure a minimum dt value to prevent animation freezing
             dt = max(dt, 0.001)  # Minimum 1ms dt
             
-            # Get and process events
             events = pygame.event.get()
             pygame.event.pump()  # Process internal events
             
@@ -232,7 +229,7 @@ class Game:
                 if hasattr(self.current_view, "update"):
                     self.current_view.update(dt)
 
-            # Draw everything
+
             self.update()
             pygame.display.flip()
             
@@ -246,26 +243,21 @@ class Game:
         """Toggles fullscreen mode."""
         self.fullscreen = not self.fullscreen
         if self.fullscreen:
-            # Store current window size before going to fullscreen
             self.windowed_size = (self.WIDTH, self.HEIGHT)
-            # Switch to fullscreen mode
             self.window = pygame.display.set_mode(
                 (0, 0),
                 pygame.FULLSCREEN
             )
             self.WIDTH, self.HEIGHT = self.window.get_size()
         else:
-            # Return to windowed mode with previous size
             self.window = pygame.display.set_mode(
                 self.windowed_size,
                 pygame.RESIZABLE
             )
             self.WIDTH, self.HEIGHT = self.windowed_size
         
-        # Update all views with new dimensions
         self.handle_resize()
         
-        # Update transition screen if active
         if self.transition_screen:
             self.transition_screen.update_screen_size(self.WIDTH, self.HEIGHT)
 

@@ -36,7 +36,6 @@ class GameView:
                 filtered_events.append(event)
 
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                # Open settings menu instead of returning to main menu
                 self.switch_view("ingame_settings")
 
         keys = pygame.key.get_pressed()
@@ -54,7 +53,6 @@ class GameView:
 
     def update(self, dt):
         """Updates the game logic with frame-independent timing."""
-        # Ensure minimum dt to keep animations running
         dt = max(dt, 0.016)
         self.player.update(dt)
 
@@ -66,15 +64,11 @@ class GameView:
 
     def handle_resize(self, new_width, new_height):
         """Adjusts the view when the window is resized."""
-        # Calculate the scaling factors based on the design dimensions
+        # Calculate the scaling factors based on the base dimensions
         scale_x = new_width / self.design_width
         scale_y = new_height / self.design_height
         
-        # Choose the minimum scale to maintain aspect ratio
         self.current_scale = min(scale_x, scale_y)
         
-        # Center the player in the new screen dimensions
         self.player.rect.center = (new_width // 2, new_height // 2)
-        
-        # Adjust player speed based on the screen scale
         self.player.speed = self.player.base_speed * self.current_scale

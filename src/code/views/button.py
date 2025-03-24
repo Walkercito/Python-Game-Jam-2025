@@ -141,15 +141,12 @@ class Button:
             color = (150, 150, 150) if self.disabled else ((200, 200, 200) if not self.hovered else (255, 255, 255))
             pygame.draw.rect(screen, color, self.rect)
 
-        # Calculate font size based on button height for better spacing
         font_size = min(font_sizes["medium"], int(self.rect.height * 0.6))
         font = pygame.font.Font(font_path, font_size)
         
-        # Use a subdued text color for disabled buttons
         text_color = (100, 100, 100) if self.disabled else font_colors["button"]
         text_surface = font.render(self.text, True, text_color)
         
-        # Create a slightly smaller text rect to increase internal padding
         padding = max(10, int(self.rect.width * 0.1))  # 10px or 10% of width, whichever is larger
         text_rect = text_surface.get_rect(
             center=(self.rect.centerx, self.rect.centery)
