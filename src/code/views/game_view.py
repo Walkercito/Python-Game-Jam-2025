@@ -21,7 +21,7 @@ class GameView:
         self.player = Player(
             pos = (width // 2, height // 2),  
             animation_paths=animation_paths,
-            speed = 200,
+            speed = 140,
             scale = 0.5
         )
         self.current_scale = 1.0

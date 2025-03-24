@@ -64,32 +64,49 @@ class Game:
         """Switches between different game views."""
         if view_name == "main":
             pygame.mouse.set_visible(True)
-            self.current_view = MainMenu(
-                switch_view=self.switch_view,
-                design_width=self.design_width,
-                design_height=self.design_height  
-            )
-            pygame.event.set_allowed([pygame.MOUSEMOTION, pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP])
-            self.pending_view = None
-        elif view_name == "game":
-            self.pending_view = "game"
+            
+            if hasattr(self, 'saved_game_view'):
+                self.pending_view = "main"
+                self.transition_screen = LoadingScreen(
+                    design_width = self.design_width, 
+                    design_height = self.design_height,
+                    current_width = self.WIDTH,
+                    current_height = self.HEIGHT
+                )
+            else:
+                self.current_view = MainMenu(
+                    switch_view = self.switch_view,
+                    design_width = self.design_width,
+                    design_height = self.design_height  
+                )
+                pygame.event.set_allowed([pygame.MOUSEMOTION, pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP])
+                self.pending_view = None
+        elif view_name == "settings_to_main":
+            pygame.mouse.set_visible(True)
+            self.pending_view = "settings_to_main"
             self.transition_screen = LoadingScreen(
-                design_width=self.design_width, 
-                design_height=self.design_height,
-                current_width=self.WIDTH,
-                current_height=self.HEIGHT
+                design_width = self.design_width, 
+                design_height = self.design_height,
+                current_width = self.WIDTH,
+                current_height = self.HEIGHT
             )
         elif view_name == "settings":
             pygame.mouse.set_visible(True)
-            self.current_view = Settings(
-                switch_view=self.switch_view,
-                design_width=self.design_width,
-                design_height=self.design_height,
-                get_game_state=self.get_game_state,
-                toggle_fullscreen=self.toggle_fullscreen
+            self.pending_view = "settings"
+            self.transition_screen = LoadingScreen(
+                design_width = self.design_width, 
+                design_height = self.design_height,
+                current_width = self.WIDTH,
+                current_height = self.HEIGHT
             )
-            pygame.event.set_allowed([pygame.MOUSEMOTION, pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP])
-            self.pending_view = None
+        elif view_name == "game":
+            self.pending_view = "game"
+            self.transition_screen = LoadingScreen(
+                design_width = self.design_width, 
+                design_height = self.design_height,
+                current_width = self.WIDTH,
+                current_height = self.HEIGHT
+            )
         elif view_name == "ingame_settings":
             # In-game settings menu with fullscreen option disabled
             pygame.mouse.set_visible(True)
@@ -131,18 +148,86 @@ class Game:
                 if self.transition_screen.alpha < 255:
                     return True
                 else:
-                    # Start loading and disable fade-in
                     if not hasattr(self, 'load_task'):
                         self.load_task = asyncio.create_task(self.load_game_resources())
                     return True
             else:
-                # Fade-out after loading
-                if self.transition_screen.alpha > 0:
+                if not hasattr(self, 'current_view') or not isinstance(self.current_view, GameView):
                     return True
                 else:
                     self.transition_screen = None
                     self.pending_view = None
                     del self.load_task
+                    return False
+        elif self.pending_view == "main":
+            self.transition_screen.update_fade()
+
+            if self.transition_screen.active:
+                if self.transition_screen.alpha < 255:
+                    return True
+                else:
+                    self.transition_screen.active = False
+                    self.current_view = MainMenu(
+                        switch_view = self.switch_view,
+                        design_width = self.design_width,
+                        design_height = self.design_height  
+                    )
+                    pygame.event.set_allowed([pygame.MOUSEMOTION, pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP])
+                    return True
+            else:
+                if self.transition_screen.alpha > 0:
+                    return True
+                else:
+                    self.transition_screen = None
+                    self.pending_view = None
+                    if hasattr(self, 'saved_game_view'):
+                        delattr(self, 'saved_game_view')
+                    return False
+        elif self.pending_view == "settings_to_main":
+            self.transition_screen.update_fade()
+
+            if self.transition_screen.active:
+                if self.transition_screen.alpha < 255:
+                    return True
+                else:
+                    self.transition_screen.active = False
+                    self.current_view = MainMenu(
+                        switch_view = self.switch_view,
+                        design_width = self.design_width,
+                        design_height = self.design_height  
+                    )
+                    pygame.event.set_allowed([pygame.MOUSEMOTION, pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP])
+                    return True
+            else:
+                if self.transition_screen.alpha > 0:
+                    return True
+                else:
+                    self.transition_screen = None
+                    self.pending_view = None
+                    return False
+        elif self.pending_view == "settings":
+            self.transition_screen.update_fade()
+
+            if self.transition_screen.active:
+                if self.transition_screen.alpha < 255:
+                    return True
+                else:
+                    self.transition_screen.active = False
+                    self.current_view = Settings(
+                        switch_view = self.switch_view,
+                        design_width = self.design_width,
+                        design_height = self.design_height,
+                        get_game_state = self.get_game_state,
+                        toggle_fullscreen = self.toggle_fullscreen
+                    )
+                    pygame.event.set_allowed([pygame.MOUSEMOTION, pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP])
+                    return True
+            else:
+                if self.transition_screen.alpha > 0:
+                    return True
+                else:
+                    self.transition_screen = None
+                    self.pending_view = None
                     return False
 
     async def load_game_resources(self):

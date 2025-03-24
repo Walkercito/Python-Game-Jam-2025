@@ -2,6 +2,7 @@
 
 import pygame
 from .button import Button
+import constants as const
 
 
 class MainMenu:
@@ -13,53 +14,53 @@ class MainMenu:
         self.design_width = design_width 
         self.design_height = design_height  
         self.buttons = []
+        self.title_font = pygame.font.Font(const.font_path, const.font_sizes["large"] + 20)
         self.create_buttons()
 
     def create_buttons(self):
         """Creates and positions the menu buttons."""
         button_border = "src/assets/borders/PNG/Default/Border/panel-border-010.png"
         
-        button_count = 4
         button_height = 60
-        spacing = 10
-        total_height = (button_height * button_count) + (spacing * (button_count - 1))
-        start_y = (self.design_height - total_height) // 2 
+        spacing = 20
+        
+        start_y = 200
         
         self.buttons.append(Button(
-            text="Play",
-            x=50, y=start_y,
-            width=200, height=button_height,
-            on_click=lambda: self.switch_view("game"),
-            image_path=button_border,
-            border_size=16,
-            use_9slice=True
+            text = "Play",
+            x = 50, y = start_y,
+            width = 200, height = button_height,
+            on_click = lambda: self.switch_view("game"),
+            image_path = button_border,
+            border_size = 16,
+            use_9slice = True
         ))
         self.buttons.append(Button(
-            text="Settings",
-            x=50, y=start_y + (button_height + spacing),
-            width=200, height=button_height,
-            on_click=lambda: self.switch_view("settings"),
-            image_path=button_border,
-            border_size=12,
-            use_9slice=True
+            text = "Settings",
+            x = 50, y = start_y + (button_height + spacing),
+            width = 200, height = button_height,
+            on_click = lambda: self.switch_view("settings"),
+            image_path = button_border,
+            border_size = 12,
+            use_9slice = True
         ))
         self.buttons.append(Button(
-            text="Credits",
-            x=50, y=start_y + 2 * (button_height + spacing),
-            width=200, height=button_height,
-            on_click=lambda: self.switch_view("credits"),
-            image_path=button_border,
-            border_size=12,
-            use_9slice=True
+            text = "Credits",
+            x = 50, y = start_y + 2 * (button_height + spacing),
+            width = 200, height = button_height,
+            on_click = lambda: self.switch_view("credits"),
+            image_path = button_border,
+            border_size = 12,
+            use_9slice = True
         ))
         self.buttons.append(Button(
-            text="Exit",
-            x=50, y=start_y + 3 * (button_height + spacing),
-            width=200, height=button_height,
-            on_click=lambda: self.switch_view("exit"),
-            image_path=button_border,
-            border_size=12,
-            use_9slice=True
+            text = "Exit",
+            x = 50, y = start_y + 3 * (button_height + spacing),
+            width = 200, height = button_height,
+            on_click = lambda: self.switch_view("exit"),
+            image_path = button_border,
+            border_size = 12,
+            use_9slice = True
         ))
 
     def handle_events(self, events):
@@ -86,6 +87,13 @@ class MainMenu:
 
     def draw(self, screen):
         """Draws the menu and its buttons."""
+        # Draw background
+        screen.fill((30, 30, 30))
+        
+        title_text = self.title_font.render("Awaking", True, (255, 255, 255))
+        title_rect = title_text.get_rect(x=50, y=80)
+        screen.blit(title_text, title_rect)
+        
         for button in self.buttons:
             button.draw(screen)
         

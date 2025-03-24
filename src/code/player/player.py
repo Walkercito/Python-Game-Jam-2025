@@ -16,7 +16,7 @@ class Player(pygame.sprite.Sprite):
         self.animation_frames = {}
         self.animation_speeds = {
             'idle': 0.1,      
-            'walking': 0.08,  
+            'walking': 0.10,  
             'attack': 0.05,   
         }
         self.load_animations(animation_paths)

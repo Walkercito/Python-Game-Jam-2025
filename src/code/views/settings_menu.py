@@ -41,7 +41,7 @@ class Settings:
         
         # Back button with different behavior based on if accessed from game or main menu
         back_text = "Resume" if self.is_ingame else "Back"
-        back_action = self.return_to_game if self.is_ingame else lambda: self.switch_view("main")
+        back_action = self.return_to_game if self.is_ingame else lambda: self.switch_view("settings_to_main")
         
         self.buttons.append(Button(
             text = back_text,
@@ -68,7 +68,6 @@ class Settings:
                 use_9slice = True
             ))
         
-        # Fullscreen toggle button - only shown if not in-game
         if not self.is_ingame and self.toggle_fullscreen is not None:
             fullscreen_text = "Fullscreen: ON" if self.fullscreen else "Fullscreen: OFF"
             self.buttons.append(Button(
@@ -120,11 +119,9 @@ class Settings:
         """Toggles the fullscreen setting and updates the button text."""
         self.fullscreen = not self.fullscreen
         
-        # Update button text
         fullscreen_text = "Fullscreen: ON" if self.fullscreen else "Fullscreen: OFF"
         self.buttons[1].text = fullscreen_text
         
-        # Call the game's toggle_fullscreen function
         if self.toggle_fullscreen:
             self.toggle_fullscreen()
     
@@ -132,7 +129,6 @@ class Settings:
         """Toggles the show FPS setting and updates the button text."""
         self.show_fps = not self.show_fps
         
-        # Update button text
         fps_text = "Show FPS: ON" if self.show_fps else "Show FPS: OFF"
         self.buttons[-1].text = fps_text
         
@@ -140,7 +136,6 @@ class Settings:
     def handle_events(self, events):
         """Handles input events for the settings menu."""
         for event in events:
-            # Check for button interactions
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 mouse_pos = pygame.mouse.get_pos()
                 for button in self.buttons:
@@ -155,16 +150,14 @@ class Settings:
                 if self.is_ingame:
                     self.return_to_game()
                 else:
-                    self.switch_view("main")
+                    self.switch_view("settings_to_main")
     
     def handle_resize(self, new_width, new_height):
         """Adjusts the menu layout when the window is resized."""
-        # Update exit button position if in-game
         if self.is_ingame and len(self.buttons) > 1:
             self.buttons[1].rect.x = new_width - 250
             self.buttons[1].rect.y = new_height - 80
             
-        # Always update back button position
         self.buttons[0].rect.y = new_height - 80
         
         fullscreen_button_index = 2 if self.is_ingame else 1
