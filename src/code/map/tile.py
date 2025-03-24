@@ -31,3 +31,19 @@ class TileMap:
     def draw(self, surface):
         """Draws all tiles on the given surface."""
         self.tiles.draw(surface)
+        
+    def draw_with_camera(self, surface, camera):
+        """Draws the map with camera offset.
+        
+        Args:
+            surface: Surface to draw on
+            camera: Camera object used to apply offsets
+        """
+        # Para cada tile en el mapa
+        for tile in self.tiles:
+            # Aplicar la cámara para obtener la posición ajustada del tile
+            camera_applied_rect = camera.apply_rect(tile.rect)
+            
+            # Solo dibujar los tiles que son visibles en la pantalla
+            if surface.get_rect().colliderect(camera_applied_rect):
+                surface.blit(tile.image, camera_applied_rect)

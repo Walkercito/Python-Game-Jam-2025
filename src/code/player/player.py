@@ -19,13 +19,13 @@ class Player(pygame.sprite.Sprite):
             'walking': 0.10,  
             'attack': 0.05,   
         }
+        self.debug = False  # Define debug como False para no ver mensajes de depuración
         self.load_animations(animation_paths)
         self.current_animation = 'idle'
         self.frame_index = 0
         self.animation_timer = 0
         self.direction = pygame.math.Vector2(0, 0)
         self.facing_right = True
-        
 
         if self.current_animation in self.animation_frames and len(self.animation_frames[self.current_animation]) > 0:
             self.image = self.animation_frames[self.current_animation][0]['original']
@@ -35,7 +35,6 @@ class Player(pygame.sprite.Sprite):
             self.image.fill((255, 0, 255))  # Magenta for visibility
             
         self.rect = self.image.get_rect(center=pos)
-        self.debug = False  
 
     def load_animations(self, animation_paths):
         """Loads animations from files."""

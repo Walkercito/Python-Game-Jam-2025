@@ -135,7 +135,6 @@ class Settings:
         
         fps_text = "Show FPS: ON" if self.show_fps else "Show FPS: OFF"
         self.buttons[-1].text = fps_text
-        
     
     def handle_events(self, events):
         """Handles input events for the settings menu."""

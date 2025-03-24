@@ -5,6 +5,7 @@ from utils import draw_fps
 from src.code.player.player import Player
 from constants import width, height, gray
 from src.code.map.tile import TileMap
+from src.code.camera import Camera
 
 
 class GameView:
@@ -31,6 +32,11 @@ class GameView:
 
         # Load the map
         self.map = TileMap('./src/assets/map/floor.tmx')
+        
+        # Inicializar la cámara con una zona muerta del 10% del tamaño de la pantalla
+        self.camera = Camera(width, height, dead_zone_percent=0.1)
+        # Centrar la cámara en el jugador al inicio
+        self.camera.reset((self.player.rect.centerx, self.player.rect.centery))
 
     def handle_events(self, events):
         """Handles input events."""
@@ -59,16 +65,20 @@ class GameView:
         """Updates the game logic with frame-independent timing."""
         dt = max(dt, 0.016)
         self.player.update(dt)
+        
+        # Actualizar la cámara para seguir al jugador
+        self.camera.update(self.player.rect, dt)
 
     def draw(self, screen):
         """Draws game elements."""
         screen.fill(gray)
         
-        # Dibujar el mapa primero
-        self.map.draw(screen)
+        # Dibujar el mapa con desplazamiento de cámara
+        self.map.draw_with_camera(screen, self.camera)
         
-        # Dibujar el jugador
-        screen.blit(self.player.image, self.player.rect)
+        # Dibujar el jugador con la cámara aplicada
+        player_rect = self.camera.apply(self.player)
+        screen.blit(self.player.image, player_rect)
         
         # Dibujar FPS
         draw_fps(screen, self.clock, self.font, screen.get_width(), self.show_fps)
@@ -81,5 +91,11 @@ class GameView:
         
         self.current_scale = min(scale_x, scale_y)
         
-        self.player.rect.center = (new_width // 2, new_height // 2)
+        # Mantener la posición relativa del jugador cuando se redimensiona
+        player_center = self.player.rect.center
+        
+        # Ajustar la velocidad del jugador basada en la escala
         self.player.speed = self.player.base_speed * self.current_scale
+        
+        # Actualizar la cámara para la nueva dimensión de la ventana
+        self.camera.resize(new_width, new_height)
