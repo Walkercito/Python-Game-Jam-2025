@@ -10,6 +10,7 @@ class Player(pygame.sprite.Sprite):
     def __init__(self, pos, animation_paths, speed=5, scale=1.0):
         """Initializes the player with position and animations."""
         super().__init__()
+        self.base_speed = speed
         self.speed = speed
         self.scale = scale  
         self.animation_frames = {}
@@ -132,8 +133,21 @@ class Player(pygame.sprite.Sprite):
         # Update position
         if self.direction.length() > 0:
             normalized_dir = self.direction.normalize()
-            self.rect.x += normalized_dir.x * self.speed * dt
-            self.rect.y += normalized_dir.y * self.speed * dt
+            # Calcula el movimiento completo primero
+            move_x = normalized_dir.x * self.speed * dt
+            move_y = normalized_dir.y * self.speed * dt
+            
+            # Almacena la posición como float para mayor precisión
+            if not hasattr(self, '_float_pos'):
+                self._float_pos = pygame.math.Vector2(self.rect.x, self.rect.y)
+            
+            # Actualiza la posición flotante
+            self._float_pos.x += move_x
+            self._float_pos.y += move_y
+            
+            # Actualiza la posición en el rect (con redondeo)
+            self.rect.x = round(self._float_pos.x)
+            self.rect.y = round(self._float_pos.y)
 
     def set_animation(self, animation_name):
         """Changes the player's current animation."""
