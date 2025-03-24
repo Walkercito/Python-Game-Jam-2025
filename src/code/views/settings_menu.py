@@ -113,8 +113,7 @@ class Settings:
             on_click = self.toggle_fps_option,
             image_path = button_border,
             border_size = 12,
-            use_9slice = True,
-            disabled = True,
+            use_9slice = True
         ))
     
     def toggle_fullscreen_option(self):
