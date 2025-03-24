@@ -15,6 +15,11 @@ class MainMenu:
         self.design_height = design_height  
         self.buttons = []
         self.title_font = pygame.font.Font(const.font_path, const.font_sizes["large"] + 20)
+        
+        # Use the globally loaded overlay image
+        self.overlay = pygame.transform.scale(const.overlay_image, (design_width, design_height))
+        self.overlay_rect = self.overlay.get_rect()
+        
         self.create_buttons()
 
     def create_buttons(self):
@@ -82,6 +87,10 @@ class MainMenu:
         scale_x = new_width / self.design_width
         scale_y = new_height / self.design_height
 
+        # Resize overlay image to fit the screen
+        self.overlay = pygame.transform.scale(const.overlay_image, (new_width, new_height))
+        self.overlay_rect = self.overlay.get_rect()
+        
         for button in self.buttons:
             button.resize(scale_x, scale_y)
 
@@ -89,6 +98,9 @@ class MainMenu:
         """Draws the menu and its buttons."""
         # Draw background
         screen.fill((30, 30, 30))
+        
+        # Draw overlay image
+        screen.blit(self.overlay, self.overlay_rect)
         
         title_text = self.title_font.render("Awaking", True, (255, 255, 255))
         title_rect = title_text.get_rect(x=50, y=80)

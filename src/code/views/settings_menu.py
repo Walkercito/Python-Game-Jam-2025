@@ -24,6 +24,10 @@ class Settings:
         self.subtitle_font = pygame.font.Font(const.font_path, const.font_sizes["medium"])
         self.option_font = pygame.font.Font(const.font_path, const.font_sizes["small"])
         
+        # Use the globally loaded overlay image
+        self.overlay = pygame.transform.scale(const.overlay_image, (design_width, design_height))
+        self.overlay_rect = self.overlay.get_rect()
+        
         # Get current settings from game state
         self.fullscreen = False
         self.show_fps = True
@@ -154,6 +158,10 @@ class Settings:
     
     def handle_resize(self, new_width, new_height):
         """Adjusts the menu layout when the window is resized."""
+        # Resize overlay image to fit the screen
+        self.overlay = pygame.transform.scale(const.overlay_image, (new_width, new_height))
+        self.overlay_rect = self.overlay.get_rect()
+        
         if self.is_ingame and len(self.buttons) > 1:
             self.buttons[1].rect.x = new_width - 250
             self.buttons[1].rect.y = new_height - 80
@@ -172,6 +180,9 @@ class Settings:
     def draw(self, screen):
         """Draws the settings menu and its options."""
         screen.fill((30, 30, 30))
+        
+        # Draw overlay image
+        screen.blit(self.overlay, self.overlay_rect)
         
         title_text = self.title_font.render("Settings", True, (255, 255, 255))
         title_rect = title_text.get_rect(centerx=screen.get_width()//2, y=50)

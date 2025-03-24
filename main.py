@@ -46,6 +46,10 @@ class Game:
         )
         pygame.display.set_caption(const.title)
         
+        # Cargar las imágenes globales aquí, después de set_mode()
+        # Definimos overlay_image directamente
+        const.overlay_image = pygame.image.load("src/assets/menu/overlay.png").convert_alpha()
+        
         self.switch_view("main")
         self.handle_resize()
 

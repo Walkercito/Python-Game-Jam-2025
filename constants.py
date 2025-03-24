@@ -1,5 +1,7 @@
 """Global constants for the game."""
 
+import pygame
+
 width = 1020
 height = 620
 title = "Awaking"
@@ -23,3 +25,6 @@ font_colors = {
     "title": white,
     "subtitle": gray
 }
+
+
+overlay_image = None
