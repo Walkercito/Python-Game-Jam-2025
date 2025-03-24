@@ -80,8 +80,8 @@ class Game:
             else:
                 self.current_view = MainMenu(
                     switch_view = self.switch_view,
-                    design_width = self.design_width,
-                    design_height = self.design_height  
+                    design_width = self.WIDTH,
+                    design_height = self.HEIGHT  
                 )
                 pygame.event.set_allowed([pygame.MOUSEMOTION, pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP])
                 self.pending_view = None
@@ -121,8 +121,8 @@ class Game:
             
             self.current_view = Settings(
                 switch_view = self.switch_view,
-                design_width = self.design_width,
-                design_height = self.design_height,
+                design_width = self.WIDTH,
+                design_height = self.HEIGHT,
                 get_game_state = self.get_game_state,
                 toggle_fullscreen = None,
                 is_ingame = True,          # Flag to indicate in-game settings
@@ -173,8 +173,8 @@ class Game:
                     self.transition_screen.active = False
                     self.current_view = MainMenu(
                         switch_view = self.switch_view,
-                        design_width = self.design_width,
-                        design_height = self.design_height  
+                        design_width = self.WIDTH,
+                        design_height = self.HEIGHT  
                     )
                     pygame.event.set_allowed([pygame.MOUSEMOTION, pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP])
                     return True
@@ -197,8 +197,8 @@ class Game:
                     self.transition_screen.active = False
                     self.current_view = MainMenu(
                         switch_view = self.switch_view,
-                        design_width = self.design_width,
-                        design_height = self.design_height  
+                        design_width = self.WIDTH,
+                        design_height = self.HEIGHT  
                     )
                     pygame.event.set_allowed([pygame.MOUSEMOTION, pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP])
                     return True
@@ -219,8 +219,8 @@ class Game:
                     self.transition_screen.active = False
                     self.current_view = Settings(
                         switch_view = self.switch_view,
-                        design_width = self.design_width,
-                        design_height = self.design_height,
+                        design_width = self.WIDTH,
+                        design_height = self.HEIGHT,
                         get_game_state = self.get_game_state,
                         toggle_fullscreen = self.toggle_fullscreen
                     )

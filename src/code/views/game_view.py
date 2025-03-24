@@ -33,9 +33,9 @@ class GameView:
         # Load the map
         self.map = TileMap('./src/assets/map/floor.tmx')
         
-        # Inicializar la cámara con una zona muerta del 10% del tamaño de la pantalla
+        # Initialize the camera with a dead zone of 10% of the screen size
         self.camera = Camera(width, height, dead_zone_percent=0.1)
-        # Centrar la cámara en el jugador al inicio
+        # Center the camera on the player at the start
         self.camera.reset((self.player.rect.centerx, self.player.rect.centery))
 
     def handle_events(self, events):
@@ -66,36 +66,41 @@ class GameView:
         dt = max(dt, 0.016)
         self.player.update(dt)
         
-        # Actualizar la cámara para seguir al jugador
+        # Update the camera to follow the player
         self.camera.update(self.player.rect, dt)
 
     def draw(self, screen):
         """Draws game elements."""
         screen.fill(gray)
         
-        # Dibujar el mapa con desplazamiento de cámara
+        # Draw the map with camera offset
         self.map.draw_with_camera(screen, self.camera)
         
-        # Dibujar el jugador con la cámara aplicada
+        # Draw the player with camera applied
         player_rect = self.camera.apply(self.player)
         screen.blit(self.player.image, player_rect)
         
-        # Dibujar FPS
+        # Draw FPS
         draw_fps(screen, self.clock, self.font, screen.get_width(), self.show_fps)
 
     def handle_resize(self, new_width, new_height):
         """Adjusts the view when the window is resized."""
-        # Calculate the scaling factors based on the base dimensions
         scale_x = new_width / self.design_width
         scale_y = new_height / self.design_height
         
         self.current_scale = min(scale_x, scale_y)
         
-        # Mantener la posición relativa del jugador cuando se redimensiona
-        player_center = self.player.rect.center
+        self.player.rect.center = (new_width // 2, new_height // 2)
         
-        # Ajustar la velocidad del jugador basada en la escala
-        self.player.speed = self.player.base_speed * self.current_scale
+        self.camera.width = new_width
+        self.camera.height = new_height
+        self.camera.dead_zone_x = new_width * self.camera.dead_zone_percent
+        self.camera.dead_zone_y = new_height * self.camera.dead_zone_percent
+        self.camera.dead_zone_rect = pygame.Rect(
+            new_width // 2 - self.camera.dead_zone_x // 2, 
+            new_height // 2 - self.camera.dead_zone_y // 2,
+            self.camera.dead_zone_x, 
+            self.camera.dead_zone_y
+        )
         
-        # Actualizar la cámara para la nueva dimensión de la ventana
-        self.camera.resize(new_width, new_height)
+        self.camera.reset((self.player.rect.centerx, self.player.rect.centery))
