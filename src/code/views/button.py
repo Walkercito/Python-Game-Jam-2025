@@ -7,7 +7,10 @@ from constants import font_path, font_sizes, font_colors
 class Button:
     """Represents a clickable button with hover effects."""
 
-    def __init__(self, text, x, y, width, height, on_click, image_path=None, border_size=12, use_9slice=True):
+    def __init__(self, text, x, y, width, height, on_click=None, 
+                 font=None, font_size=None, text_color=None, bg_color=None, 
+                 hover_color=None, border_radius=15, border_width=2, image_path=None,
+                 hover_image_path=None, border_size=12, use_9slice=True, disabled=False):
         """Initializes the button with text, position, and behavior."""
         self.text = text
         self.original_x = x
@@ -23,6 +26,7 @@ class Button:
         self.hover_image = None
         self.border_size = border_size 
         self.use_9slice = use_9slice
+        self.disabled = disabled
         
         if self.image_path:
             self.load_image()
@@ -126,22 +130,45 @@ class Button:
         result.blit(scaled_center, (border, border))
         return result
 
-    def check_hover(self, mouse_pos):
-        """Checks if the mouse is hovering over the button."""
-        self.hovered = self.rect.collidepoint(mouse_pos)
-
     def draw(self, screen):
         """Draws the button on the screen."""
         if self.scaled_image:
-            if self.hovered and hasattr(self, 'scaled_hover_image'):
+            if self.hovered and hasattr(self, 'scaled_hover_image') and not self.disabled:
                 screen.blit(self.scaled_hover_image, self.rect)
             else:
                 screen.blit(self.scaled_image, self.rect)
         else:
-            color = (200, 200, 200) if not self.hovered else (255, 255, 255)
+            color = (150, 150, 150) if self.disabled else ((200, 200, 200) if not self.hovered else (255, 255, 255))
             pygame.draw.rect(screen, color, self.rect)
 
-        font = pygame.font.Font(font_path, font_sizes["medium"])
-        text_surface = font.render(self.text, True, font_colors["button"])
-        text_rect = text_surface.get_rect(center=self.rect.center)
+        # Calculate font size based on button height for better spacing
+        font_size = min(font_sizes["medium"], int(self.rect.height * 0.6))
+        font = pygame.font.Font(font_path, font_size)
+        
+        # Use a subdued text color for disabled buttons
+        text_color = (100, 100, 100) if self.disabled else font_colors["button"]
+        text_surface = font.render(self.text, True, text_color)
+        
+        # Create a slightly smaller text rect to increase internal padding
+        padding = max(10, int(self.rect.width * 0.1))  # 10px or 10% of width, whichever is larger
+        text_rect = text_surface.get_rect(
+            center=(self.rect.centerx, self.rect.centery)
+        )
+        
         screen.blit(text_surface, text_rect)
+
+    def check_click(self, mouse_pos):
+        """Checks if the button has been clicked."""
+        if self.disabled:
+            return  # Ignore clicks on disabled buttons
+            
+        if self.rect.collidepoint(mouse_pos) and self.on_click:
+            self.on_click()
+            return True
+        return False
+
+    def check_hover(self, mouse_pos):
+        """Checks if the mouse is hovering over the button."""
+        was_hovered = self.hovered
+        self.hovered = self.rect.collidepoint(mouse_pos) and not self.disabled
+        return was_hovered != self.hovered
