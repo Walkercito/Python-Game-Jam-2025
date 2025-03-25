@@ -209,3 +209,19 @@ class Player(pygame.sprite.Sprite):
         """
         for anim_name, speed in speed_dict.items():
             self.animation_speeds[anim_name] = speed
+
+    def force_center_position(self, screen_width, screen_height):
+        """Fuerza la posición del jugador al centro exacto de la pantalla.
+        
+        Este método se llama cuando se cambia a pantalla completa o se redimensiona la ventana.
+        """
+        # Establecer el centro del rectángulo del jugador al centro de la pantalla
+        self.rect.center = (screen_width // 2, screen_height // 2)
+        
+        # Actualizar también la posición flotante para mantener la consistencia
+        if hasattr(self, '_float_pos'):
+            self._float_pos.x = self.rect.x
+            self._float_pos.y = self.rect.y
+            
+        # Reiniciar la dirección para evitar deslizamientos no deseados
+        self.direction = pygame.math.Vector2(0, 0)
