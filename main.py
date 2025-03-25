@@ -46,8 +46,8 @@ class Game:
         )
         pygame.display.set_caption(const.title)
         
-        # Cargar las imágenes globales aquí, después de set_mode()
-        # Definimos overlay_image directamente
+        # Load global images here, after set_mode()
+        # Define overlay_image directly
         const.overlay_image = pygame.image.load("src/assets/menu/overlay.png").convert_alpha()
         
         self.switch_view("main")
@@ -58,22 +58,22 @@ class Game:
         scale = min(self.WIDTH / self.design_width, self.HEIGHT / self.design_height)
         self.font = pygame.font.Font(const.font_path, int(const.font_sizes["medium"] * scale))
         
-        # Actualizar la vista actual si existe
+        # Update the current view if it exists
         if hasattr(self, 'current_view'):
             if hasattr(self.current_view, 'handle_resize'):
                 self.current_view.handle_resize(self.WIDTH, self.HEIGHT)
             
-            # Forzar reposicionamiento del jugador y la cámara en la vista del juego
+            # Force repositioning of the player and camera in the game view
             if hasattr(self.current_view, 'player') and hasattr(self.current_view, 'camera'):
-                # Reposicionar al jugador en el centro exacto de la pantalla
+                # Reposition the player at the exact center of the screen
                 self.current_view.player.rect.center = (self.WIDTH // 2, self.HEIGHT // 2)
                 
-                # Actualizar la posición flotante del jugador para que coincida con su rectángulo
+                # Update the player's float position to match its rectangle
                 if hasattr(self.current_view.player, '_float_pos'):
                     self.current_view.player._float_pos.x = self.current_view.player.rect.centerx
                     self.current_view.player._float_pos.y = self.current_view.player.rect.centery
                 
-                # Forzar a la cámara a centrarse en el jugador
+                # Force the camera to center on the player
                 self.current_view.camera.force_center = True
 
     def switch_view(self, view_name):
@@ -358,15 +358,15 @@ class Game:
             )
             self.WIDTH, self.HEIGHT = self.windowed_size
         
-        # Usar el método específico para manejar la transición en la vista del juego
+        # Use the specific method to handle the transition in the game view
         if hasattr(self, 'current_view') and hasattr(self.current_view, 'handle_fullscreen_change'):
             self.current_view.handle_fullscreen_change(self.WIDTH, self.HEIGHT, self.fullscreen)
         else:
-            # Si no existe el método específico, usar el método general
+            # If the specific method does not exist, use the general method
             if hasattr(self, 'current_view') and hasattr(self.current_view, 'handle_resize'):
                 self.current_view.handle_resize(self.WIDTH, self.HEIGHT)
         
-        # Actualizar las dimensiones de las vistas de transición
+        # Update the screen size of the transition views
         if self.transition_screen:
             self.transition_screen.update_screen_size(self.WIDTH, self.HEIGHT)
 

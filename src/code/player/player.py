@@ -19,7 +19,7 @@ class Player(pygame.sprite.Sprite):
             'walking': 0.10,  
             'attack': 0.05,   
         }
-        self.debug = False  # Define debug como False para no ver mensajes de depuración
+        self.debug = False  # Set debug to False to hide debugging messages
         self.load_animations(animation_paths)
         self.current_animation = 'idle'
         self.frame_index = 0
@@ -132,19 +132,19 @@ class Player(pygame.sprite.Sprite):
         # Update position
         if self.direction.length() > 0:
             normalized_dir = self.direction.normalize()
-            # Calcula el movimiento completo primero
+            # Calculate the full movement first
             move_x = normalized_dir.x * self.speed * dt
             move_y = normalized_dir.y * self.speed * dt
             
-            # Almacena la posición como float para mayor precisión
+            # Store the position as a float for higher precision
             if not hasattr(self, '_float_pos'):
                 self._float_pos = pygame.math.Vector2(self.rect.x, self.rect.y)
             
-            # Actualiza la posición flotante
+            # Update the float position
             self._float_pos.x += move_x
             self._float_pos.y += move_y
             
-            # Actualiza la posición en el rect (con redondeo)
+            # Update the position in the rect (with rounding)
             self.rect.x = round(self._float_pos.x)
             self.rect.y = round(self._float_pos.y)
 
@@ -211,17 +211,17 @@ class Player(pygame.sprite.Sprite):
             self.animation_speeds[anim_name] = speed
 
     def force_center_position(self, screen_width, screen_height):
-        """Fuerza la posición del jugador al centro exacto de la pantalla.
+        """Forces the player's position to the exact center of the screen.
         
-        Este método se llama cuando se cambia a pantalla completa o se redimensiona la ventana.
+        This method is called when switching to full screen or resizing the window.
         """
-        # Establecer el centro del rectángulo del jugador al centro de la pantalla
+        # Set the center of the player's rect to the center of the screen
         self.rect.center = (screen_width // 2, screen_height // 2)
         
-        # Actualizar también la posición flotante para mantener la consistencia
+        # Also update the float position to maintain consistency
         if hasattr(self, '_float_pos'):
             self._float_pos.x = self.rect.x
             self._float_pos.y = self.rect.y
             
-        # Reiniciar la dirección para evitar deslizamientos no deseados
+        # Reset the direction to avoid unwanted sliding
         self.direction = pygame.math.Vector2(0, 0)
