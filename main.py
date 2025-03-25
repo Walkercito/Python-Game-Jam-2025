@@ -25,7 +25,7 @@ class Game:
         }
         self.npc_animation_paths = {
             'idle': './src/assets/player/idle',
-            'walking': './src/assets/player/walking',
+            'walking': './src/assets/npc/walking',
             'attack': './src/assets/player/idle',
         }
 
@@ -50,9 +50,7 @@ class Game:
             pygame.RESIZABLE
         )
         pygame.display.set_caption(const.title)
-        
-        # Load global images here, after set_mode()
-        # Define overlay_image directly
+
         const.overlay_image = pygame.image.load("src/assets/menu/overlay.png").convert_alpha()
         
         self.switch_view("main")
@@ -63,22 +61,17 @@ class Game:
         scale = min(self.WIDTH / self.design_width, self.HEIGHT / self.design_height)
         self.font = pygame.font.Font(const.font_path, int(const.font_sizes["medium"] * scale))
         
-        # Update the current view if it exists
         if hasattr(self, 'current_view'):
             if hasattr(self.current_view, 'handle_resize'):
                 self.current_view.handle_resize(self.WIDTH, self.HEIGHT)
             
-            # Force repositioning of the player and camera in the game view
             if hasattr(self.current_view, 'player') and hasattr(self.current_view, 'camera'):
-                # Reposition the player at the exact center of the screen
                 self.current_view.player.rect.center = (self.WIDTH // 2, self.HEIGHT // 2)
                 
-                # Update the player's float position to match its rectangle
                 if hasattr(self.current_view.player, '_float_pos'):
                     self.current_view.player._float_pos.x = self.current_view.player.rect.centerx
                     self.current_view.player._float_pos.y = self.current_view.player.rect.centery
                 
-                # Force the camera to center on the player
                 self.current_view.camera.force_center = True
 
     def switch_view(self, view_name):
@@ -129,10 +122,8 @@ class Game:
                 current_height = self.HEIGHT
             )
         elif view_name == "ingame_settings":
-            # In-game settings menu with fullscreen option disabled
             pygame.mouse.set_visible(True)
-            
-            # Store the current game view to return to it
+
             if isinstance(self.current_view, GameView):
                 self.saved_game_view = self.current_view
             
@@ -142,7 +133,7 @@ class Game:
                 design_height = self.HEIGHT,
                 get_game_state = self.get_game_state,
                 toggle_fullscreen = None,
-                is_ingame = True,          # Flag to indicate in-game settings
+                is_ingame = True,  
                 return_to_game = lambda: self.return_to_game()
             )
             pygame.event.set_allowed([pygame.MOUSEMOTION, pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP])

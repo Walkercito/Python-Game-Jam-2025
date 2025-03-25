@@ -15,11 +15,11 @@ class Player(pygame.sprite.Sprite):
         self.scale = scale  
         self.animation_frames = {}
         self.animation_speeds = {
-            'idle': 0.10,      
-            'walking': 0.12,  
+            'idle': 0.125,      
+            'walking': 0.125,  
             'attack': 0.05,   
         }
-        self.debug = False  # Set debug to False to hide debugging messages
+        self.debug = False
         self.load_animations(animation_paths)
         self.current_animation = 'idle'
         self.frame_index = 0
