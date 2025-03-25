@@ -453,7 +453,6 @@ class NPCManager:
         )
         
         self.npcs.add(npc)
-        print(f"Spawned NPC at position ({spawn_x}, {y_pos}), state: {npc.state}, direction: {'right' if direction > 0 else 'left'}")
     
     def handle_interaction(self, player_rect, keys):
         """Handle player interaction with NPCs."""
@@ -463,7 +462,6 @@ class NPCManager:
         for npc in self.npcs:
             if npc.can_interact and keys[pygame.K_e]:
                 if npc.interact():
-                    print(f"Interacting with NPC at position ({npc.rect.x}, {npc.rect.y})")
                     self.interaction_active = True
                     return True
         return False
