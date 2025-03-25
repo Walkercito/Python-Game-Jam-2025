@@ -15,8 +15,8 @@ class Player(pygame.sprite.Sprite):
         self.scale = scale  
         self.animation_frames = {}
         self.animation_speeds = {
-            'idle': 0.1,      
-            'walking': 0.10,  
+            'idle': 0.10,      
+            'walking': 0.12,  
             'attack': 0.05,   
         }
         self.debug = False  # Set debug to False to hide debugging messages

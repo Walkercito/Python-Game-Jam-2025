@@ -23,6 +23,11 @@ class Game:
             'walking': './src/assets/player/walking',
             'attack': './src/assets/player/idle',
         }
+        self.npc_animation_paths = {
+            'idle': './src/assets/player/idle',
+            'walking': './src/assets/player/walking',
+            'attack': './src/assets/player/idle',
+        }
 
         self.design_width = const.width
         self.design_height = const.height
@@ -259,6 +264,7 @@ class Game:
         self.current_view = GameView(
             switch_view = self.switch_view,
             animation_paths = self.animation_paths,
+            npc_animation_paths = self.npc_animation_paths,
             clock = self.clock,
             font = self.font,
             show_fps = self.show_fps
