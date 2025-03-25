@@ -3,7 +3,44 @@
 import pygame
 from .button import Button
 import constants as const
+import os
 
+class MenuAnimation:
+    """Manage the animation of the main menu background."""
+    
+    def __init__(self, frames_folder, default_size):
+        self.frames = []
+        self.current_frame = 0
+        self.animation_speed = 0.125
+        self.last_update = 0
+        self.default_size = default_size
+        
+        # Load frames 
+        for filename in sorted(os.listdir(frames_folder)):
+            if filename.endswith(('.png', '.jpg')):
+                path = os.path.join(frames_folder, filename)
+                image = pygame.image.load(path).convert_alpha()
+                self.frames.append(image)
+
+        self.scaled_frames = self.frames.copy()
+
+    def resize(self, new_size):
+        """Resize all frames to a new size."""
+        self.scaled_frames = [
+            pygame.transform.scale(frame, new_size)
+            for frame in self.frames
+        ]
+
+    def update(self, dt):
+        """Updates the current frame based on the elapsed time."""
+        self.last_update += dt
+        if self.last_update >= self.animation_speed:
+            self.current_frame = (self.current_frame + 1) % len(self.frames)
+            self.last_update = 0
+
+    def get_current_frame(self):
+        """Gets the current scaled frame"""
+        return self.scaled_frames[self.current_frame]
 
 class MainMenu:
     """Handles the main menu screen and its buttons."""
@@ -15,6 +52,12 @@ class MainMenu:
         self.design_height = design_height  
         self.buttons = []
         self.title_font = pygame.font.Font(const.font_path, const.font_sizes["large"] + 20)
+        self.current_size = (design_width, design_height)
+
+        self.menu_animation = MenuAnimation(
+            frames_folder = "src/assets/menu/frames",
+            default_size = (design_width, design_height)
+        )
         
         # Use the globally loaded overlay image
         self.overlay = pygame.transform.scale(const.overlay_image, (design_width, design_height))
@@ -90,6 +133,9 @@ class MainMenu:
         # Resize overlay image to fit the screen
         self.overlay = pygame.transform.scale(const.overlay_image, (new_width, new_height))
         self.overlay_rect = self.overlay.get_rect()
+
+        self.current_size = (new_width, new_height)
+        self.menu_animation.resize(self.current_size)
         
         for button in self.buttons:
             button.resize(scale_x, scale_y)
@@ -98,6 +144,9 @@ class MainMenu:
         """Draws the menu and its buttons."""
         # Draw background
         screen.fill((30, 30, 30))
+
+        animation_frame = self.menu_animation.get_current_frame()
+        screen.blit(animation_frame, (0, 0))
         
         # Draw overlay image
         screen.blit(self.overlay, self.overlay_rect)

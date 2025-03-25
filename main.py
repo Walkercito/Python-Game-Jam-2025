@@ -305,6 +305,9 @@ class Game:
             
             await asyncio.sleep(0)  # Allow other async operations
 
+            if isinstance(self.current_view, MainMenu):
+                self.current_view.menu_animation.update(dt)
+
             # Handle transition screens
             if self.transition_screen and self.handle_transition():
                 self.render_transition()
