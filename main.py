@@ -52,6 +52,7 @@ class Game:
         pygame.display.set_caption(const.title)
 
         const.overlay_image = pygame.image.load("src/assets/menu/overlay.png").convert_alpha()
+        const.static_menu_frame = pygame.image.load("src/assets/menu/frames/frame_0017.jpg").convert_alpha()
         
         self.switch_view("main")
         self.handle_resize()

@@ -27,6 +27,9 @@ class Settings:
         # Use the globally loaded overlay image
         self.overlay = pygame.transform.scale(const.overlay_image, (design_width, design_height))
         self.overlay_rect = self.overlay.get_rect()
+
+        self.static_menu_frame = pygame.transform.scale(const.static_menu_frame, (design_width, design_height))
+        self.static_menu_frame_rect = self.static_menu_frame.get_rect()
         
         # Get current settings from game state
         self.fullscreen = False
@@ -160,6 +163,9 @@ class Settings:
         # Resize overlay image to fit the screen
         self.overlay = pygame.transform.scale(const.overlay_image, (new_width, new_height))
         self.overlay_rect = self.overlay.get_rect()
+
+        self.static_menu_frame = pygame.transform.scale(const.static_menu_frame, (new_width, new_height))
+        self.static_menu_frame_rect = self.static_menu_frame.get_rect()
         
         if self.is_ingame and len(self.buttons) > 1:
             self.buttons[1].rect.x = new_width - 250
@@ -181,6 +187,7 @@ class Settings:
         screen.fill((30, 30, 30))
         
         # Draw overlay image
+        screen.blit(self.static_menu_frame, self.static_menu_frame_rect)
         screen.blit(self.overlay, self.overlay_rect)
         
         title_text = self.title_font.render("Settings", True, (255, 255, 255))

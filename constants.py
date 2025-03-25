@@ -28,3 +28,4 @@ font_colors = {
 
 
 overlay_image = None
+static_menu_frame = None
