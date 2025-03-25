@@ -3,6 +3,26 @@
 import pygame 
 from .button import Button
 import constants as const
+import os
+
+
+class MenuAnimation:
+    """Manage the animation of menu frames."""
+    
+    def __init__(self, frame_path, default_size):
+        self.frame = pygame.image.load(frame_path).convert_alpha()
+        self.default_size = default_size
+        self.scaled_frame = pygame.transform.scale(self.frame, default_size)
+        self.frame_rect = self.scaled_frame.get_rect()
+        
+    def resize(self, new_size):
+        """Resize frame to a new size."""
+        self.scaled_frame = pygame.transform.scale(self.frame, new_size)
+        self.frame_rect = self.scaled_frame.get_rect()
+    
+    def get_current_frame(self):
+        """Gets the current scaled frame"""
+        return self.scaled_frame
 
 
 class Settings:
@@ -28,8 +48,11 @@ class Settings:
         self.overlay = pygame.transform.scale(const.overlay_image, (design_width, design_height))
         self.overlay_rect = self.overlay.get_rect()
 
-        self.static_menu_frame = pygame.transform.scale(const.static_menu_frame, (design_width, design_height))
-        self.static_menu_frame_rect = self.static_menu_frame.get_rect()
+        # Initialize menu animation for static menu frame
+        self.static_menu_animation = MenuAnimation(
+            frame_path="src/assets/menu/frames/frame_0017.jpg",
+            default_size=(design_width, design_height)
+        )
         
         # Get current settings from game state
         self.fullscreen = False
@@ -102,12 +125,7 @@ class Settings:
                 disabled = True
             ))
         
-       
         y_position = 300 
-        if not self.is_ingame and self.toggle_fullscreen is not None:
-            y_position = 300
-        elif self.is_ingame:
-            y_position = 300
         
         fps_text = "Show FPS: ON" if self.show_fps else "Show FPS: OFF"
         self.buttons.append(Button(
@@ -121,6 +139,22 @@ class Settings:
             border_size = 12,
             use_9slice = True
         ))
+        animation_playing = "Static menu: ON"
+        if not self.is_ingame:
+            self.static_menu_btn = Button(
+                text = animation_playing,
+                x = self.design_width//2 - 150,
+                y = 400,
+                width = 300,
+                height = 60,
+                on_click = None,
+                image_path = button_border,
+                border_size = 12,
+                use_9slice = True
+            )
+            self.buttons.append(self.static_menu_btn)
+            # Store the index of static menu button for easier access
+            self.static_menu_btn_index = len(self.buttons) - 1
     
     def toggle_fullscreen_option(self):
         """Toggles the fullscreen setting and updates the button text."""
@@ -164,15 +198,18 @@ class Settings:
         self.overlay = pygame.transform.scale(const.overlay_image, (new_width, new_height))
         self.overlay_rect = self.overlay.get_rect()
 
-        self.static_menu_frame = pygame.transform.scale(const.static_menu_frame, (new_width, new_height))
-        self.static_menu_frame_rect = self.static_menu_frame.get_rect()
+        # Resize the static menu frame using the animation class
+        self.static_menu_animation.resize((new_width, new_height))
         
+        # Adjust the back button position
+        self.buttons[0].rect.y = new_height - 80
+        
+        # Adjust ingame menu button position if applicable
         if self.is_ingame and len(self.buttons) > 1:
             self.buttons[1].rect.x = new_width - 250
             self.buttons[1].rect.y = new_height - 80
             
-        self.buttons[0].rect.y = new_height - 80
-        
+        # Center all option buttons
         fullscreen_button_index = 2 if self.is_ingame else 1
         fps_button_index = 3 if self.is_ingame else 2
         
@@ -181,13 +218,22 @@ class Settings:
             
         if len(self.buttons) > fps_button_index:
             self.buttons[fps_button_index].rect.centerx = new_width // 2
+        
+        # Properly center the static menu button
+        if not self.is_ingame and hasattr(self, 'static_menu_btn_index'):
+            static_btn = self.buttons[self.static_menu_btn_index]
+            static_btn.rect.centerx = new_width // 2
+            static_btn.rect.x = new_width // 2 - static_btn.rect.width // 2
     
     def draw(self, screen):
         """Draws the settings menu and its options."""
         screen.fill((30, 30, 30))
         
+        # Draw static menu frame using the animation class
+        static_frame = self.static_menu_animation.get_current_frame()
+        screen.blit(static_frame, self.static_menu_animation.frame_rect)
+        
         # Draw overlay image
-        screen.blit(self.static_menu_frame, self.static_menu_frame_rect)
         screen.blit(self.overlay, self.overlay_rect)
         
         title_text = self.title_font.render("Settings", True, (255, 255, 255))

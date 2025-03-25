@@ -14,6 +14,7 @@ class MenuAnimation:
         self.animation_speed = 0.125
         self.last_update = 0
         self.default_size = default_size
+        self.scaled_frames = []
         
         # Load frames 
         for filename in sorted(os.listdir(frames_folder)):
@@ -22,7 +23,7 @@ class MenuAnimation:
                 image = pygame.image.load(path).convert_alpha()
                 self.frames.append(image)
 
-        self.scaled_frames = self.frames.copy()
+        self.resize(default_size)
 
     def resize(self, new_size):
         """Resize all frames to a new size."""
