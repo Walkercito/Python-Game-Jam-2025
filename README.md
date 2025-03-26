@@ -60,8 +60,8 @@ uv run main.py
 > **Awaking** is a 5-minute minimalist experience where you play as a character who must choose between breaking the current (helping others break free from addiction) or going with the flow (accepting the status quo). Your decisions determine which of the two alternate endings you'll reach, reflecting the game jam's *downstream* theme through simple yet meaningful narrative.
 
 - [W/A/S/D] -> To move in four directions
--    [E]    -> To interact with when the indicator above and NPC appears
--   [ESC]   -> To open setting inside the game
+-    [E]    -> To interact with an NPC when the indicator above and them appears
+-   [ESC]   -> To open settings inside the game
 -   [Mouse] -> Only for the main menu and settings
 
 ### Objective  
