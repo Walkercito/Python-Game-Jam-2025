@@ -139,15 +139,17 @@ class Settings:
             border_size = 12,
             use_9slice = True
         ))
-        animation_playing = "Static menu: ON"
+        
+        static_menu_text = "Static menu: ON" if const.use_static_menu else "Static menu: OFF"
+        
         if not self.is_ingame:
             self.static_menu_btn = Button(
-                text = animation_playing,
+                text = static_menu_text,
                 x = self.design_width//2 - 150,
                 y = 400,
                 width = 300,
                 height = 60,
-                on_click = None,
+                on_click = self.toggle_static_menu_option,
                 image_path = button_border,
                 border_size = 12,
                 use_9slice = True
@@ -172,6 +174,13 @@ class Settings:
         
         fps_text = "Show FPS: ON" if self.show_fps else "Show FPS: OFF"
         self.buttons[-1].text = fps_text
+    
+    def toggle_static_menu_option(self):
+        """Toggles the static menu setting and updates the button text."""
+        const.use_static_menu = not const.use_static_menu
+        
+
+        self.static_menu_btn.text = "Static menu: ON" if const.use_static_menu else "Static menu: OFF"
     
     def handle_events(self, events):
         """Handles input events for the settings menu."""

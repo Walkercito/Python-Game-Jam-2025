@@ -27,6 +27,7 @@ class MenuAnimation:
 
     def resize(self, new_size):
         """Resize all frames to a new size."""
+        self.default_size = new_size
         self.scaled_frames = [
             pygame.transform.scale(frame, new_size)
             for frame in self.frames
@@ -34,13 +35,19 @@ class MenuAnimation:
 
     def update(self, dt):
         """Updates the current frame based on the elapsed time."""
+        if const.use_static_menu:
+            return
+            
         self.last_update += dt
         if self.last_update >= self.animation_speed:
             self.current_frame = (self.current_frame + 1) % len(self.frames)
             self.last_update = 0
 
     def get_current_frame(self):
-        """Gets the current scaled frame"""
+        """Gets the current frame (static or animated)"""
+        if const.use_static_menu and const.static_menu_frame:
+            return pygame.transform.scale(const.static_menu_frame, self.default_size)
+
         return self.scaled_frames[self.current_frame]
 
 class MainMenu:

@@ -29,3 +29,5 @@ font_colors = {
 
 overlay_image = None
 static_menu_frame = None
+use_static_menu = False 
+static_menu_frame_index = 17

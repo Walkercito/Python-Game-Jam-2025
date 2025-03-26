@@ -169,3 +169,7 @@ class Button:
         was_hovered = self.hovered
         self.hovered = self.rect.collidepoint(mouse_pos) and not self.disabled
         return was_hovered != self.hovered
+
+    def update_text_surface(self):
+        """Updates the text surface of the button. (Empty)"""
+        pass

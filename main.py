@@ -6,6 +6,7 @@ from src.code.views.main_menu import MainMenu
 from src.code.views.game_view import GameView
 from src.code.views.loading_screen import LoadingScreen
 from src.code.views.settings_menu import Settings
+from src.code.views.intro_screen import IntroScreen
 import asyncio
 import os
 from sys import exit
@@ -35,7 +36,7 @@ class Game:
         self.WIDTH = const.width
         self.HEIGHT = const.height
         self.FPS = 60
-        self.fullscreen = False
+        self.fullscreen = True  # Cambiado a True para iniciar en pantalla completa
         self.show_fps = True  # Set default value to True
         self.windowed_size = (self.WIDTH, self.HEIGHT)
 
@@ -45,29 +46,55 @@ class Game:
         self.transition_screen = None
         self.pending_view = None
 
+        # Guardar las dimensiones de la pantalla antes de activar el modo pantalla completa
+        info = pygame.display.Info()
+        self.screen_width = info.current_w
+        self.screen_height = info.current_h
+
+        # Iniciar en modo pantalla completa
+        flags = pygame.FULLSCREEN | pygame.RESIZABLE
         self.window = pygame.display.set_mode(
-            (self.WIDTH, self.HEIGHT), 
-            pygame.RESIZABLE
+            (self.screen_width, self.screen_height), 
+            flags
         )
         pygame.display.set_caption(const.title)
 
         const.overlay_image = pygame.image.load("src/assets/menu/overlay.png").convert_alpha()
-        const.static_menu_frame = pygame.image.load("src/assets/menu/frames/frame_0017.jpg").convert_alpha()
         
-        self.switch_view("main")
+        menu_frames_path = "src/assets/menu/frames"
+        menu_frames = sorted([f for f in os.listdir(menu_frames_path) if f.endswith(('.png', '.jpg'))])
+        
+        if menu_frames and len(menu_frames) > const.static_menu_frame_index:
+            static_frame_file = menu_frames[const.static_menu_frame_index]
+            const.static_menu_frame = pygame.image.load(f"{menu_frames_path}/{static_frame_file}").convert_alpha()
+        else:
+            if menu_frames:
+                const.static_menu_frame = pygame.image.load(f"{menu_frames_path}/{menu_frames[0]}").convert_alpha()
+            else:
+                print("Warning: No frames found")
+        
+        self.intro_screen = IntroScreen(
+            design_width=self.design_width,
+            design_height=self.design_height,
+            current_width=self.screen_width,
+            current_height=self.screen_height
+        )
+        self.showing_intro = True
+        self.menu_loaded = False
+        
         self.handle_resize()
 
     def handle_resize(self):
         """Adjusts the game elements when the window is resized."""
-        scale = min(self.WIDTH / self.design_width, self.HEIGHT / self.design_height)
+        scale = min(self.screen_width / self.design_width, self.screen_height / self.design_height)
         self.font = pygame.font.Font(const.font_path, int(const.font_sizes["medium"] * scale))
         
         if hasattr(self, 'current_view'):
             if hasattr(self.current_view, 'handle_resize'):
-                self.current_view.handle_resize(self.WIDTH, self.HEIGHT)
+                self.current_view.handle_resize(self.screen_width, self.screen_height)
             
             if hasattr(self.current_view, 'player') and hasattr(self.current_view, 'camera'):
-                self.current_view.player.rect.center = (self.WIDTH // 2, self.HEIGHT // 2)
+                self.current_view.player.rect.center = (self.screen_width // 2, self.screen_height // 2)
                 
                 if hasattr(self.current_view.player, '_float_pos'):
                     self.current_view.player._float_pos.x = self.current_view.player.rect.centerx
@@ -85,15 +112,18 @@ class Game:
                 self.transition_screen = LoadingScreen(
                     design_width = self.design_width, 
                     design_height = self.design_height,
-                    current_width = self.WIDTH,
-                    current_height = self.HEIGHT
+                    current_width = self.screen_width,
+                    current_height = self.screen_height
                 )
             else:
-                self.current_view = MainMenu(
-                    switch_view = self.switch_view,
-                    design_width = self.WIDTH,
-                    design_height = self.HEIGHT  
-                )
+                if not hasattr(self, 'main_menu'):
+                    self.main_menu = MainMenu(
+                        switch_view = self.switch_view,
+                        design_width = self.screen_width,
+                        design_height = self.screen_height  
+                    )
+                    
+                self.current_view = self.main_menu
                 pygame.event.set_allowed([pygame.MOUSEMOTION, pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP])
                 self.pending_view = None
         elif view_name == "settings_to_main":
@@ -102,8 +132,8 @@ class Game:
             self.transition_screen = LoadingScreen(
                 design_width = self.design_width, 
                 design_height = self.design_height,
-                current_width = self.WIDTH,
-                current_height = self.HEIGHT
+                current_width = self.screen_width,
+                current_height = self.screen_height
             )
         elif view_name == "settings":
             pygame.mouse.set_visible(True)
@@ -111,16 +141,16 @@ class Game:
             self.transition_screen = LoadingScreen(
                 design_width = self.design_width, 
                 design_height = self.design_height,
-                current_width = self.WIDTH,
-                current_height = self.HEIGHT
+                current_width = self.screen_width,
+                current_height = self.screen_height
             )
         elif view_name == "game":
             self.pending_view = "game"
             self.transition_screen = LoadingScreen(
                 design_width = self.design_width, 
                 design_height = self.design_height,
-                current_width = self.WIDTH,
-                current_height = self.HEIGHT
+                current_width = self.screen_width,
+                current_height = self.screen_height
             )
         elif view_name == "ingame_settings":
             pygame.mouse.set_visible(True)
@@ -130,8 +160,8 @@ class Game:
             
             self.current_view = Settings(
                 switch_view = self.switch_view,
-                design_width = self.WIDTH,
-                design_height = self.HEIGHT,
+                design_width = self.screen_width,
+                design_height = self.screen_height,
                 get_game_state = self.get_game_state,
                 toggle_fullscreen = None,
                 is_ingame = True,  
@@ -182,8 +212,8 @@ class Game:
                     self.transition_screen.active = False
                     self.current_view = MainMenu(
                         switch_view = self.switch_view,
-                        design_width = self.WIDTH,
-                        design_height = self.HEIGHT  
+                        design_width = self.screen_width,
+                        design_height = self.screen_height  
                     )
                     pygame.event.set_allowed([pygame.MOUSEMOTION, pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP])
                     return True
@@ -206,8 +236,8 @@ class Game:
                     self.transition_screen.active = False
                     self.current_view = MainMenu(
                         switch_view = self.switch_view,
-                        design_width = self.WIDTH,
-                        design_height = self.HEIGHT  
+                        design_width = self.screen_width,
+                        design_height = self.screen_height  
                     )
                     pygame.event.set_allowed([pygame.MOUSEMOTION, pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP])
                     return True
@@ -228,8 +258,8 @@ class Game:
                     self.transition_screen.active = False
                     self.current_view = Settings(
                         switch_view = self.switch_view,
-                        design_width = self.WIDTH,
-                        design_height = self.HEIGHT,
+                        design_width = self.screen_width,
+                        design_height = self.screen_height,
                         get_game_state = self.get_game_state,
                         toggle_fullscreen = self.toggle_fullscreen
                     )
@@ -289,87 +319,145 @@ class Game:
         if self.transition_screen:
             self.transition_screen.draw(self.window)
 
-    async def run(self):
-        """Main game loop, now asynchronous with guaranteed animation updates."""
-        running = True
-        last_time = pygame.time.get_ticks() / 1000.0
+    async def preload_main_menu(self):
+        """Asynchronously preloads game resources for main menu."""
+        self.main_menu = MainMenu(
+            switch_view = self.switch_view,
+            design_width = self.screen_width,
+            design_height = self.screen_height  
+        )
+
+        self.menu_loaded = True
+
+    async def preload_view(self, view_name):
+        """Asynchronously loads game resources between views."""
+        await asyncio.sleep(0.05)
         
-        while running:
-            current_time = pygame.time.get_ticks() / 1000.0
-            dt = current_time - last_time
-            last_time = current_time
-            
-            dt = max(dt, 0.001)  # Minimum 1ms dt
-            
-            events = pygame.event.get()
-            pygame.event.pump()  # Process internal events
-            
-            await asyncio.sleep(0)  # Allow other async operations
+        if view_name == "settings":
+            settings_view = Settings(
+                switch_view = self.switch_view,
+                design_width = self.screen_width,
+                design_height = self.screen_height,
+                get_game_state = self.get_game_state,
+                toggle_fullscreen = self.toggle_fullscreen
+            )
+            for i in range(3):
+                await asyncio.sleep(0.1)
+                if self.transition_screen:
+                    self.transition_screen.update_progress((i + 1) * 33)
 
-            if isinstance(self.current_view, MainMenu):
-                self.current_view.menu_animation.update(dt)
-
-            # Handle transition screens
-            if self.transition_screen and self.handle_transition():
-                self.render_transition()
-                continue
-
-            # Process events
-            for event in events:
-                if event.type == pygame.QUIT:
-                    running = False
+            while self.transition_screen and self.transition_screen.alpha < 255:
+                await asyncio.sleep(0.01)
                 
-                elif event.type == pygame.VIDEORESIZE:
-                    if not self.fullscreen:
-                        self.WIDTH, self.HEIGHT = event.w, event.h
-                        self.windowed_size = (self.WIDTH, self.HEIGHT)
-                        self.handle_resize()
-                        
-            # Update the current view
-            if self.current_view:
-                self.current_view.handle_events(events)
-                if hasattr(self.current_view, "update"):
-                    self.current_view.update(dt)
+            self.current_view = settings_view
+            pygame.event.set_allowed([pygame.MOUSEMOTION, pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP])
+            if self.transition_screen:
+                self.transition_screen.active = False
+                
+        elif view_name == "settings_to_main":
+            if not hasattr(self, 'main_menu'):
+                self.main_menu = MainMenu(
+                    switch_view = self.switch_view,
+                    design_width = self.screen_width,
+                    design_height = self.screen_height
+                )
+                
+            for i in range(3):
+                await asyncio.sleep(0.1)
+                if self.transition_screen:
+                    self.transition_screen.update_progress((i + 1) * 33)
 
-
-            self.update()
-            pygame.display.flip()
+            while self.transition_screen and self.transition_screen.alpha < 255:
+                await asyncio.sleep(0.01)
+                
+            self.current_view = self.main_menu
+            pygame.event.set_allowed([pygame.MOUSEMOTION, pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP])
+            if self.transition_screen:
+                self.transition_screen.active = False
+                
+        elif view_name == "main_from_game":
+            if not hasattr(self, 'main_menu'):
+                self.main_menu = MainMenu(
+                    switch_view = self.switch_view,
+                    design_width = self.screen_width,
+                    design_height = self.screen_height  
+                )
+                
+            for i in range(5):
+                await asyncio.sleep(0.1)
+                if self.transition_screen:
+                    self.transition_screen.update_progress((i + 1) * 20)
             
-            # Regulate frame rate
-            self.clock.tick(self.FPS)
+            while self.transition_screen and self.transition_screen.alpha < 255:
+                await asyncio.sleep(0.01)
 
-        pygame.quit()
-        exit()
+            self.current_view = self.main_menu
+            pygame.event.set_allowed([pygame.MOUSEMOTION, pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP])
+            if self.transition_screen:
+                self.transition_screen.active = False
+
+            if hasattr(self, 'saved_game_view'):
+                delattr(self, 'saved_game_view')
+                
+        elif view_name == "ingame_settings":
+            ingame_settings = Settings(
+                switch_view = self.switch_view,
+                design_width = self.screen_width,
+                design_height = self.screen_height,
+                get_game_state = self.get_game_state,
+                toggle_fullscreen = None,
+                is_ingame = True,  
+                return_to_game = lambda: self.return_to_game()
+            )
+            
+            for i in range(3):
+                await asyncio.sleep(0.1)
+                if self.transition_screen:
+                    self.transition_screen.update_progress((i + 1) * 33)
+
+            while self.transition_screen and self.transition_screen.alpha < 255:
+                await asyncio.sleep(0.01)
+
+            self.current_view = ingame_settings
+            pygame.event.set_allowed([pygame.MOUSEMOTION, pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP])
+            if self.transition_screen:
+                self.transition_screen.active = False
+                self.pending_view = None
+
+    def finish_intro(self):
+        """Go to main menu after resources load."""
+        self.showing_intro = False
+        self.current_view = self.main_menu
+        pygame.event.set_allowed([pygame.MOUSEMOTION, pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP])
 
     def toggle_fullscreen(self):
         """Toggles fullscreen mode."""
         self.fullscreen = not self.fullscreen
         
         if self.fullscreen:
-            self.windowed_size = (self.WIDTH, self.HEIGHT)
+            self.windowed_size = (self.screen_width, self.screen_height)
             self.window = pygame.display.set_mode(
                 (0, 0),
                 pygame.FULLSCREEN
             )
-            self.WIDTH, self.HEIGHT = self.window.get_size()
+            self.screen_width, self.screen_height = self.window.get_size()
         else:
             self.window = pygame.display.set_mode(
                 self.windowed_size,
                 pygame.RESIZABLE
             )
-            self.WIDTH, self.HEIGHT = self.windowed_size
+            self.screen_width, self.screen_height = self.windowed_size
         
-        # Use the specific method to handle the transition in the game view
+
         if hasattr(self, 'current_view') and hasattr(self.current_view, 'handle_fullscreen_change'):
-            self.current_view.handle_fullscreen_change(self.WIDTH, self.HEIGHT, self.fullscreen)
+            self.current_view.handle_fullscreen_change(self.screen_width, self.screen_height, self.fullscreen)
         else:
-            # If the specific method does not exist, use the general method
             if hasattr(self, 'current_view') and hasattr(self.current_view, 'handle_resize'):
-                self.current_view.handle_resize(self.WIDTH, self.HEIGHT)
+                self.current_view.handle_resize(self.screen_width, self.screen_height)
         
         # Update the screen size of the transition views
         if self.transition_screen:
-            self.transition_screen.update_screen_size(self.WIDTH, self.HEIGHT)
+            self.transition_screen.update_screen_size(self.screen_width, self.screen_height)
 
     def return_to_game(self):
         """Returns to the saved game view after closing in-game settings."""
@@ -378,6 +466,67 @@ class Game:
             pygame.mouse.set_visible(False)
             pygame.event.set_blocked([pygame.MOUSEMOTION, pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP])
             self.pending_view = None
+
+
+    async def run(self):
+        """Main game loop, now asynchronous with guaranteed animation updates."""
+        running = True
+        last_time = pygame.time.get_ticks() / 1000.0
+
+        asyncio.create_task(self.preload_main_menu())
+        
+        while running:
+            current_time = pygame.time.get_ticks() / 1000.0
+            dt = current_time - last_time
+            last_time = current_time
+            
+            dt = max(dt, 0.001) 
+            
+            events = pygame.event.get()
+            pygame.event.pump()
+            
+            await asyncio.sleep(0)  # Allow other async operations
+
+            if self.showing_intro:
+                self.intro_screen.update(dt)
+                self.intro_screen.draw(self.window)
+                pygame.display.flip()
+                
+                if self.intro_screen.completed and self.menu_loaded:
+                    self.finish_intro()
+
+                self.clock.tick(self.FPS)
+                continue
+
+            if isinstance(self.current_view, MainMenu):
+                self.current_view.menu_animation.update(dt)
+
+            if self.transition_screen and self.handle_transition():
+                self.render_transition()
+                continue
+
+            for event in events:
+                if event.type == pygame.QUIT:
+                    running = False
+                
+                elif event.type == pygame.VIDEORESIZE:
+                    if not self.fullscreen:
+                        self.screen_width, self.screen_height = event.w, event.h
+                        self.windowed_size = (self.screen_width, self.screen_height)
+                        self.handle_resize()
+
+            if self.current_view:
+                self.current_view.handle_events(events)
+                if hasattr(self.current_view, "update"):
+                    self.current_view.update(dt)
+
+            self.update()
+            pygame.display.flip()
+            
+            self.clock.tick(self.FPS)
+
+        pygame.quit()
+        exit()
 
 
 if __name__ == '__main__':
