@@ -74,7 +74,9 @@ The city flows like a river of glowing screens. You move against the current, of
 
 Three types of people drift through this neon stream: the willing, the resistant, and those too far gone. Learn their rhythms—your success depends on reading the subtle currents in their eyes.  
 
-*(Mechanically: Each NPC interaction dynamically affects your Influence and Energy bars. Manage both resources carefully to reach the ending you desire.)*  
+> [!TIP]
+> *(Mechanically: Each NPC interaction dynamically affects your Influence and Energy bars.
+> Manage both resources carefully to reach the ending you desire.)*  
 
 ---
 
