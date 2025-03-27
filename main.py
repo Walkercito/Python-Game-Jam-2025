@@ -10,6 +10,8 @@ from src.code.views.intro_screen import IntroScreen
 import asyncio
 import os
 from sys import exit
+import json
+import traceback
 
 
 class Game:
@@ -22,12 +24,15 @@ class Game:
         self.animation_paths = {
             'idle': './src/assets/player/idle',
             'walking': './src/assets/player/walking',
-            'attack': './src/assets/player/idle',
+            'attack': './src/assets/player/interact',
         }
         self.npc_animation_paths = {
             'idle': './src/assets/player/idle',
             'walking': './src/assets/npc/walking',
-            'attack': './src/assets/player/idle',
+            'book': './src/assets/npc/reaction',
+            'convinced': './src/assets/player/idle',
+            'indecisive': './src/assets/player/idle',
+            'closed': './src/assets/player/idle',
         }
 
         self.design_width = const.width
@@ -36,7 +41,7 @@ class Game:
         self.WIDTH = const.width
         self.HEIGHT = const.height
         self.FPS = 60
-        self.fullscreen = True  # Cambiado a True para iniciar en pantalla completa
+        self.fullscreen = True  
         self.show_fps = True  # Set default value to True
         self.windowed_size = (self.WIDTH, self.HEIGHT)
 
@@ -46,12 +51,10 @@ class Game:
         self.transition_screen = None
         self.pending_view = None
 
-        # Guardar las dimensiones de la pantalla antes de activar el modo pantalla completa
         info = pygame.display.Info()
         self.screen_width = info.current_w
         self.screen_height = info.current_h
 
-        # Iniciar en modo pantalla completa
         flags = pygame.FULLSCREEN | pygame.RESIZABLE
         self.window = pygame.display.set_mode(
             (self.screen_width, self.screen_height), 
@@ -70,8 +73,6 @@ class Game:
         else:
             if menu_frames:
                 const.static_menu_frame = pygame.image.load(f"{menu_frames_path}/{menu_frames[0]}").convert_alpha()
-            else:
-                print("Warning: No frames found")
         
         self.intro_screen = IntroScreen(
             design_width=self.design_width,
@@ -186,7 +187,7 @@ class Game:
         """Handles the transition logic between views."""
         if self.pending_view == "game":
             self.transition_screen.update_fade()
-
+            
             if self.transition_screen.active:
                 if self.transition_screen.alpha < 255:
                     return True
@@ -194,13 +195,18 @@ class Game:
                     if not hasattr(self, 'load_task'):
                         self.load_task = asyncio.create_task(self.load_game_resources())
                     return True
+            # We're in fade-out (decreasing alpha)
             else:
-                if not hasattr(self, 'current_view') or not isinstance(self.current_view, GameView):
+                # If alpha > 0, fade-out is in progress
+                if self.transition_screen.alpha > 0:
                     return True
+                # If alpha = 0, fade-out is complete
                 else:
+                    # Clean transition variables
                     self.transition_screen = None
                     self.pending_view = None
-                    del self.load_task
+                    if hasattr(self, 'load_task'):
+                        del self.load_task
                     return False
         elif self.pending_view == "main":
             self.transition_screen.update_fade()
@@ -274,26 +280,61 @@ class Game:
                     return False
 
     async def load_game_resources(self):
-        """Asynchronously loads game resources."""
-        total_steps = 5
-        for i in range(total_steps):
-            await asyncio.sleep(0.3)
-            self.transition_screen.update_progress((i + 1) * 20)
-            self.render_transition()
-            pygame.event.pump()
-
-        # Create GameView and activate fade-out
-        self.current_view = GameView(
-            switch_view = self.switch_view,
-            animation_paths = self.animation_paths,
-            npc_animation_paths = self.npc_animation_paths,
-            clock = self.clock,
-            font = self.font,
-            show_fps = self.show_fps
-        )
-        pygame.event.set_blocked([pygame.MOUSEMOTION, pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP])
-        pygame.mouse.set_visible(False),
-        self.transition_screen.active = False  # Start fade-out
+        """Loads game resources asynchronously."""
+        try:
+            # Create loading screen if not exists
+            if not hasattr(self, 'transition_screen') or not self.transition_screen:
+                self.transition_screen = LoadingScreen(
+                    design_width=self.design_width,
+                    design_height=self.design_height,
+                    current_width=self.screen_width,
+                    current_height=self.screen_height
+                )
+                self.transition_screen.active = True
+                
+            # Emulate loading with progress
+            steps = 10
+            for i in range(steps+1):
+                progress = i / steps
+                if hasattr(self, 'transition_screen') and self.transition_screen:
+                    self.transition_screen.update_progress(progress)
+                    
+                # Create GameView at 80% of the load
+                if i == int(steps * 0.8):
+                    try:
+                        # Create GameView with the parameters it expects in its constructor
+                        self.current_view = GameView(
+                            switch_view=self.switch_view,
+                            animation_paths=self.animation_paths,
+                            npc_animation_paths=self.npc_animation_paths,
+                            clock=self.clock,
+                            font=self.font,
+                            show_fps=self.show_fps
+                        )
+                        
+                        # Check if game state needs to be restored
+                        if os.path.exists("src/save/current_game.json"):
+                            try:
+                                with open("src/save/current_game.json", "r") as f:
+                                    saved_game = json.load(f)
+                                    if "player_position" in saved_game:
+                                        player_pos = saved_game["player_position"]
+                                        self.current_view.player.position.x = player_pos[0]
+                                        self.current_view.player.position.y = player_pos[1]
+                            except Exception as e:
+                                pass
+                    except Exception as e:
+                        # Keep track of errors but silently log them
+                        traceback.print_exc()
+            
+            # Load complete, start fade-out
+            # Start the fade-out
+            if hasattr(self, 'transition_screen') and self.transition_screen:
+                self.transition_screen.start_fade_out()
+            
+        except Exception as e:
+            # Keep track of fatal errors in loading
+            traceback.print_exc()
 
     def render_transition(self):
         """Renders the transition screen."""
@@ -498,12 +539,21 @@ class Game:
                 self.clock.tick(self.FPS)
                 continue
 
-            if isinstance(self.current_view, MainMenu):
+            # Update menu animation if we are in the main menu
+            if isinstance(self.current_view, MainMenu) and hasattr(self.current_view, 'menu_animation'):
                 self.current_view.menu_animation.update(dt)
 
-            if self.transition_screen and self.handle_transition():
-                self.render_transition()
-                continue
+            # Simplified transition handling
+            if self.transition_screen:
+                self.transition_screen.update_fade()
+                if self.handle_transition():
+                    if hasattr(self.current_view, "update"):
+                        self.current_view.update(dt)
+                    self.current_view.draw(self.window)
+                    self.transition_screen.draw(self.window)
+                    pygame.display.flip()
+                    self.clock.tick(self.FPS)
+                    continue
 
             for event in events:
                 if event.type == pygame.QUIT:
@@ -517,10 +567,16 @@ class Game:
 
             if self.current_view:
                 self.current_view.handle_events(events)
+                # If current_view has an update method, call it
                 if hasattr(self.current_view, "update"):
                     self.current_view.update(dt)
 
-            self.update()
+            # Update the screen for the normal case
+            self.window.fill((0, 0, 0))
+            if self.current_view:
+                self.current_view.draw(self.window)
+            if self.transition_screen:
+                self.transition_screen.draw(self.window)
             pygame.display.flip()
             
             self.clock.tick(self.FPS)

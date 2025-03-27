@@ -15,37 +15,61 @@ class GameView:
 
     def __init__(self, switch_view, animation_paths, npc_animation_paths, clock, font, show_fps=True):
         """Initializes the game view with necessary parameters."""
-        self.switch_view = switch_view
-        self.design_width = width
-        self.design_height = height
-        self.clock = clock
-        self.font = font
-        self.show_fps = show_fps
-        
-        current_screen = pygame.display.get_surface()
-        current_width, current_height = current_screen.get_size()
-        
-        self.player = Player(
-            pos = (current_width // 2, current_height // 2), 
-            animation_paths = animation_paths,
-            speed = 140,
-            scale = 0.5
-        )
-        self.current_scale = 1.0
-        self.last_update_time = pygame.time.get_ticks()
-        self.frame_time = 0
+        try:
+            print("GameView.__init__: Iniciando...")
+            self.switch_view = switch_view
+            self.design_width = width
+            self.design_height = height
+            self.clock = clock
+            self.font = font
+            self.show_fps = show_fps
+            
+            print("GameView.__init__: Obteniendo pantalla actual...")
+            current_screen = pygame.display.get_surface()
+            current_width, current_height = current_screen.get_size()
+            
+            print("GameView.__init__: Creando jugador...")
+            self.player = Player(
+                pos = (current_width // 2, current_height // 2), 
+                animation_paths = animation_paths,
+                speed = 140,
+                scale = 0.5
+            )
+            print("GameView.__init__: Jugador creado")
+            self.current_scale = 1.0
+            self.last_update_time = pygame.time.get_ticks()
+            self.frame_time = 0
 
-        # Load the map
-        self.map = TileMap('./src/assets/map/floor.tmx')
-        
-        # Initialize the camera with a dead zone of 10% of the screen size
-        self.camera = Camera(current_width, current_height, dead_zone_percent = 0.1)
-        self.camera.reset((self.player.rect.centerx, self.player.rect.centery))
-        
-        # Initialize the lighting system
-        self.lighting = LightingSystem(current_width, current_height)
-        
-        self.npc_manager = NPCManager(npc_animation_paths, current_width, current_height)
+            # Load the map
+            print("GameView.__init__: Cargando mapa...")
+            self.map = TileMap('./src/assets/map/floor.tmx')
+            print("GameView.__init__: Mapa cargado")
+            
+            # Initialize the camera with a dead zone of 10% of the screen size
+            print("GameView.__init__: Inicializando cámara...")
+            self.camera = Camera(current_width, current_height, dead_zone_percent = 0.1)
+            self.camera.reset((self.player.rect.centerx, self.player.rect.centery))
+            print("GameView.__init__: Cámara inicializada")
+            
+            # Initialize the lighting system
+            print("GameView.__init__: Inicializando sistema de iluminación...")
+            self.lighting = LightingSystem(current_width, current_height)
+            print("GameView.__init__: Sistema de iluminación inicializado")
+            
+            print("GameView.__init__: Creando NPCManager...")
+            self.npc_manager = NPCManager(npc_animation_paths, current_width, current_height, self.player)
+            print("GameView.__init__: NPCManager creado")
+            
+            # Game state flags
+            self.ending_screen = None
+            self.ending_timer = 0
+            self.ending_duration = 3.0  # Duration of ending transition
+            
+            print("GameView.__init__: Inicialización completa")
+        except Exception as e:
+            print(f"Error en GameView.__init__: {e}")
+            import traceback
+            traceback.print_exc()
 
     def handle_events(self, events):
         """Handles input events."""
@@ -79,13 +103,47 @@ class GameView:
         Args:
             dt: Time elapsed since last frame in seconds
         """
+        # If we're showing an ending, update the timer and return
+        if self.ending_screen:
+            self.ending_timer += dt
+            return
+            
+        # Check for ending conditions
+        if self.player.game_over:
+            # Create ending screen based on influence percentage
+            if self.player.influence_percentage >= self.player.critical_influence_threshold:
+                # First ending: player reached critical influence but ran out of energy
+                self.show_first_ending()
+            else:
+                # Second ending: player's energy ran out passively
+                self.show_second_ending()
+            return
+        
+        # Update player and stats
         self.player.update(dt)
+        self.player.update_gameplay_stats(dt, rejected=False)
+        
         self.camera.update(self.player.rect, dt)
         self.npc_manager.update(dt, self.player.rect, self.camera)
         self.lighting.update(self.player.rect.center, self.camera, dt)
+        
+        # If player reaches critical influence, start reducing light radius
+        if self.player.influence_percentage >= self.player.critical_influence_threshold:
+            # Calculate a factor (0.0-1.0) of how far energy has depleted
+            energy_factor = self.player.energy_percentage / 100.0
+            
+            # Reduce light intensity based on energy
+            self.lighting.light_radius = max(10, min(self.camera.width, self.camera.height) * 0.3 * energy_factor)
+            self.lighting.light_intensity = max(50, 255 * energy_factor)
+            self.lighting.generate_light_texture()
 
     def draw(self, screen):
         """Draws game elements."""
+        # If we're showing an ending, just draw that
+        if self.ending_screen:
+            screen.blit(self.ending_screen, (0, 0))
+            return
+            
         temp_surface = pygame.Surface((screen.get_width(), screen.get_height()))
         temp_surface.fill(gray)
         
@@ -115,8 +173,39 @@ class GameView:
         screen.blit(temp_surface, (0, 0))
         self.lighting.draw(screen)
         
+        # Draw player stats (influence and energy bars)
+        scale_factor = min(screen.get_width() / self.design_width, screen.get_height() / self.design_height)
+        self.player.draw_stats(screen, scale_factor)
+        
         # Draw FPS counter if enabled
         draw_fps(screen, self.clock, self.font, screen.get_width(), self.show_fps)
+
+    def show_first_ending(self):
+        """Shows the first ending where player reached critical influence but ran out of energy."""
+        # For now, just create a white screen with text
+        if not self.ending_screen:
+            self.ending_screen = pygame.Surface((self.camera.width, self.camera.height))
+            self.ending_screen.fill((255, 255, 255))  # White background
+            
+            # Add text when we have proper UI rendering setup
+            self.ending_timer = 0
+            self.player.special_ending_triggered = True
+            
+    def show_second_ending(self):
+        """Shows the second ending where player becomes one of the crowd."""
+        # For now, we'll implement this with fading out the light completely
+        if not self.ending_screen:
+            # Start the ending transition
+            self.lighting.light_radius = 5  # Very small light
+            self.lighting.light_intensity = 50  # Dim light
+            self.lighting.generate_light_texture()
+            
+            # Create a black screen
+            self.ending_screen = pygame.Surface((self.camera.width, self.camera.height))
+            self.ending_screen.fill((0, 0, 0))  # Black background
+            
+            # Add text when we have proper UI rendering setup
+            self.ending_timer = 0
 
     def handle_resize(self, new_width, new_height):
         """Adjusts the view when the window is resized."""

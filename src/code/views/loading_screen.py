@@ -37,6 +37,11 @@ class LoadingScreen:
         self.progress = progress
 
 
+    def start_fade_out(self):
+        """Starts the fade-out effect to exit the loading screen."""
+        self.active = False
+
+
     def update_fade(self):
         """Updates the fade-in/fade-out effect."""
         if self.active and self.alpha < 255:
@@ -63,8 +68,8 @@ class LoadingScreen:
         self.overlay.fill((0, 0, 0, self.alpha))
         screen.blit(self.overlay, (0, 0))
         
-        if self.alpha == 255:
-            self.alpha = max(0, min(255, int(self.alpha)))
+        # Only show content if alpha is high enough (visibility)
+        if self.alpha > 200:  
             # Use actual screen dimensions for drawing
             text_rect = self.loading_text.get_rect(center=(self.current_width//2, self.current_height//2 - 50))
             screen.blit(self.loading_text, text_rect)
@@ -81,4 +86,5 @@ class LoadingScreen:
             self.draw_spinner(screen)
 
         # Return True when the transition has ended
-        return self.alpha == 0 and not self.active
+        is_finished = self.alpha == 0 and not self.active
+        return is_finished
