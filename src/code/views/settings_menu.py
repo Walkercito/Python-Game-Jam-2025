@@ -140,13 +140,27 @@ class Settings:
             use_9slice = True
         ))
         
+        # Botón para activar/desactivar luces pre-renderizadas
+        prerendered_text = "Prerendered Lights: ON" if const.use_prerendered_lights else "Prerendered Lights: OFF"
+        self.buttons.append(Button(
+            text = prerendered_text,
+            x = self.design_width//2 - 150,
+            y = y_position + 100,
+            width = 300,
+            height = 60,
+            on_click = self.toggle_prerendered_lights_option,
+            image_path = button_border,
+            border_size = 12,
+            use_9slice = True
+        ))
+        
         static_menu_text = "Static menu: ON" if const.use_static_menu else "Static menu: OFF"
         
         if not self.is_ingame:
             self.static_menu_btn = Button(
                 text = static_menu_text,
                 x = self.design_width//2 - 150,
-                y = 400,
+                y = 500,  # Moved down to make room for the new button
                 width = 300,
                 height = 60,
                 on_click = self.toggle_static_menu_option,
@@ -173,7 +187,24 @@ class Settings:
         self.show_fps = not self.show_fps
         
         fps_text = "Show FPS: ON" if self.show_fps else "Show FPS: OFF"
-        self.buttons[-1].text = fps_text
+        
+        # Find the FPS button and update it
+        for btn in self.buttons:
+            if "Show FPS" in btn.text:
+                btn.text = fps_text
+                break
+    
+    def toggle_prerendered_lights_option(self):
+        """Toggles the prerendered lights setting and updates the button text."""
+        const.use_prerendered_lights = not const.use_prerendered_lights
+        
+        prerendered_text = "Prerendered Lights: ON" if const.use_prerendered_lights else "Prerendered Lights: OFF"
+        
+        # Find the prerendered lights button and update it
+        for btn in self.buttons:
+            if "Prerendered Lights" in btn.text:
+                btn.text = prerendered_text
+                break
     
     def toggle_static_menu_option(self):
         """Toggles the static menu setting and updates the button text."""

@@ -125,17 +125,10 @@ class GameView:
         
         self.camera.update(self.player.rect, dt)
         self.npc_manager.update(dt, self.player.rect, self.camera)
-        self.lighting.update(self.player.rect.center, self.camera, dt)
+        self.lighting.update(self.player.rect.center, self.camera, dt, self.player)
         
-        # If player reaches critical influence, start reducing light radius
-        if self.player.influence_percentage >= self.player.critical_influence_threshold:
-            # Calculate a factor (0.0-1.0) of how far energy has depleted
-            energy_factor = self.player.energy_percentage / 100.0
-            
-            # Reduce light intensity based on energy
-            self.lighting.light_radius = max(10, min(self.camera.width, self.camera.height) * 0.3 * energy_factor)
-            self.lighting.light_intensity = max(50, 255 * energy_factor)
-            self.lighting.generate_light_texture()
+        # Eliminamos la antigua lógica de cambio brusco de iluminación
+        # ya que ahora se maneja dentro del sistema de iluminación
 
     def draw(self, screen):
         """Draws game elements."""

@@ -31,3 +31,6 @@ overlay_image = None
 static_menu_frame = None
 use_static_menu = False 
 static_menu_frame_index = 17
+
+# Lighting system settings
+use_prerendered_lights = True  # Por defecto usar luces pre-renderizadas para mejor rendimiento

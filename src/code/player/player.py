@@ -38,7 +38,7 @@ class Player(pygame.sprite.Sprite):
         self.attack_frame_current = 0
         
         # Gameplay attributes
-        self.influence_percentage = 0.0  # Starts at 0%
+        self.influence_percentage = 0.0  # Inicializar en 40% para tener más luz al comenzar
         self.energy_percentage = 100.0   # Starts at 100%
         self.critical_influence_threshold = 87.0  # When reached, NPCs start rejecting
         self.energy_decay_rate = 0.5     # How fast energy decays passively per second
@@ -46,7 +46,17 @@ class Player(pygame.sprite.Sprite):
         self.convinced_npcs_count = 0    # Count of NPCs successfully convinced
         self.special_ending_triggered = False  # Flag for the special ending
         self.game_over = False  # Flag to indicate if the game is over
-
+        
+        # Conviction rate (ability to convince NPCs)
+        self.conviction_rate = 0.5  # Initial conviction rate (50%)
+        self.min_conviction_rate = 0.1   # Minimum conviction rate
+        self.max_conviction_rate = 0.9   # Maximum conviction rate
+        
+        # Nuevas variables para control de estado global
+        self.threshold_exceeded = False  # Si ya se superó el umbral crítico
+        self.passive_energy_drain = 0.5  # Para el drenaje pasivo de energía
+        self.is_movement_locked = False  # Para controlar si el jugador puede moverse
+        
         if self.current_animation in self.animation_frames and len(self.animation_frames[self.current_animation]) > 0:
             self.image = self.animation_frames[self.current_animation][0]['original']
         else:
@@ -284,59 +294,60 @@ class Player(pygame.sprite.Sprite):
         self.direction = pygame.math.Vector2(0, 0)
             
     def update_gameplay_stats(self, dt, rejected=False):
-        """Updates the player's gameplay statistics.
+        """Updates gameplay-related stats like energy depletion, conviction rate effects, etc.
         
         Args:
-            dt: Time elapsed since last frame in seconds
-            rejected: Whether the player was just rejected by an NPC
+            dt: Time elapsed since last frame
+            rejected: Whether the player was rejected by an NPC
         """
-        # Update energy
-        decay_rate = self.energy_decay_rate
-        
-        # Increase decay rate if player was rejected or if above critical influence
-        if rejected or self.influence_percentage >= self.critical_influence_threshold:
-            decay_rate *= self.energy_decay_multiplier
+        # Solo actualizar si el juego no ha terminado
+        if not self.game_over:
+            # Actualizar la influencia y la energía basadas en el tiempo
+            influence_factor = 1.0
             
-            # Rapidly increase the decay multiplier when above threshold
-            if self.influence_percentage >= self.critical_influence_threshold:
-                self.energy_decay_multiplier = min(5.0, self.energy_decay_multiplier + 0.1)
+            # Aplicar el drenaje pasivo de energía
+            if not self.is_movement_locked:
+                # Passive energy drain - scale by influence
+                energy_loss = self.passive_energy_drain * dt * influence_factor
+                if self.threshold_exceeded:
+                    # Drenaje de energía incrementado si se superó el umbral
+                    energy_loss *= 2.0
+                
+                self.decrease_energy(energy_loss)
             
-        # Apply energy decay
-        self.energy_percentage = max(0.0, self.energy_percentage - (decay_rate * dt))
-        
-        # Check for game over conditions
-        if self.energy_percentage <= 0 and not self.game_over:
-            self.game_over = True
+            # Verificar condiciones de fin de juego
+            if self.energy_percentage <= 0:
+                self.energy_percentage = 0
+                self.game_over = True
+                
+                # Determinar el tipo de final basado en si se superó el umbral crítico
+                if self.threshold_exceeded:
+                    self.special_ending_triggered = True  # Final pantalla blanca
+                else:
+                    # Final pantalla azul (energía a 0 sin superar umbral)
+                    self.special_ending_triggered = False
             
+            # Si la influencia llega a 0 después de haber superado el umbral, también termina el juego
+            if self.threshold_exceeded and self.influence_percentage <= 0:
+                self.influence_percentage = 0
+                self.game_over = True
+                self.special_ending_triggered = True  # Final pantalla blanca
+
     def update_influence(self, amount):
-        """Updates the player's influence percentage (positive to increase, negative to decrease).
+        """Updates the player's influence percentage."""
+        old = self.influence_percentage
+        self.influence_percentage = max(0, min(100, self.influence_percentage + amount))
         
-        Args:
-            amount: Amount to adjust influence (percentage points)
-        """
-        old_influence = self.influence_percentage
-        self.influence_percentage = max(0.0, min(100.0, self.influence_percentage + amount))
+        if self.influence_percentage >= self.critical_influence_threshold:
+            self.threshold_exceeded = True
+            self.conviction_rate = 0  # Bloquear convicción
         
-        # If it's a positive increase, it might mean an NPC was convinced
-        if amount > 0:
-            # Increment convinced NPCs counter (only if it's a significant increase)
-            if amount >= 5.0:
-                self.convinced_npcs_count += 1
-        
-        # Check if we have crossed the critical threshold
-        if old_influence < self.critical_influence_threshold and self.influence_percentage >= self.critical_influence_threshold:
-            self.energy_decay_multiplier = 2.0  # Start consuming energy faster
-            
         return self.influence_percentage
-        
+
     def update_energy(self, amount):
-        """Updates the player's energy percentage (positive to add, negative to consume).
-        
-        Args:
-            amount: Amount to adjust energy (percentage points)
-        """
+        """Updates the player's energy percentage."""
         # In this case, we are always consuming energy (negative value)
-        self.energy_percentage = max(0.0, self.energy_percentage - amount)
+        self.energy_percentage = max(0.0, min(100.0, self.energy_percentage + amount))
         
         # Check for game over
         if self.energy_percentage <= 0 and not self.game_over:
@@ -345,46 +356,33 @@ class Player(pygame.sprite.Sprite):
         return self.energy_percentage
 
     def increase_influence(self, amount):
-        """Increases the player's influence percentage.
-        
-        Args:
-            amount: Amount to increase the influence by (percentage points)
-        """
+        """Increases the player's influence percentage."""
         return self.update_influence(amount)
         
     def decrease_energy(self, amount):
-        """Decreases the player's energy percentage.
-        
-        Args:
-            amount: Amount to decrease the energy by (percentage points)
-        """
-        return self.update_energy(amount)
+        """Decreases the player's energy percentage."""
+        return self.update_energy(-amount)
 
     def get_conviction_rate(self):
-        """
-        Returns the player's conviction rate, which determines how effective they are 
-        at convincing NPCs. Based on the player's influence percentage.
+        """Returns the player's current conviction rate (0.0 to 1.0).
         
         Returns:
-            float: A value between 0.1 and 0.9 that represents the conviction ability.
+            float: The player's conviction rate between 0.1 and 0.9
         """
-        # Normalize influence to be between 0.1 and 0.9
-        # More influence = higher conviction ability
-        base_rate = 0.5  # Base rate
+        return self.conviction_rate
         
-        # Add a bonus based on influence (up to +0.4)
-        influence_bonus = min(0.4, self.influence_percentage / 100.0 * 0.4)
+    def increase_conviction_rate(self, amount):
+        """Increases the player's conviction rate."""
+        # Ensure conviction rate stays within limits
+        self.conviction_rate = min(self.max_conviction_rate, self.conviction_rate + amount)
+        return self.conviction_rate
         
-        # Reduce effectiveness if energy is low
-        energy_penalty = 0.0
-        if self.energy_percentage < 40:
-            energy_penalty = 0.3 * (1 - self.energy_percentage / 40.0)
-        
-        conviction_rate = base_rate + influence_bonus - energy_penalty
-        
-        # Ensure it's within the range [0.1, 0.9]
-        return max(0.1, min(0.9, conviction_rate))
-        
+    def decrease_conviction_rate(self, amount):
+        """Decreases the player's conviction rate."""
+        # Ensure conviction rate stays within limits
+        self.conviction_rate = max(self.min_conviction_rate, self.conviction_rate - amount)
+        return self.conviction_rate
+
     def draw_stats(self, screen, scale=1.0):
         """Draws the player's influence and energy bars.
         

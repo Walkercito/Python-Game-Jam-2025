@@ -405,161 +405,140 @@ class NPC(pygame.sprite.Sprite):
         return collision_occurred
 
     def interact(self, player=None):
-        """Handle player interaction with this NPC.
+        """Player interacts with this NPC.
         
         Returns:
-            True if interaction was successful, False otherwise.
+            bool: True if interaction was successful
         """
-        if self.is_interacting:
-            return False
-            
-        if player:
-            # Get player's conviction rate (between 0.0 and 1.0)
-            conviction_rate = 0.5  # Default value
-            if hasattr(player, 'get_conviction_rate'):
-                conviction_rate = player.get_conviction_rate()
-            
-            # Start interaction
+        if not self.is_interacting:
             self.is_interacting = True
             
-            # Initial state to determine if NPC was convinced
-            was_convinced = False
-            became_more_receptive = False
-            became_more_closed = False
+            # Set an animation sequence based on the type of NPC
+            convincing_result = None
+            player_conviction = player.get_conviction_rate() if player else 0.5
             
-            # Change behavior based on current state
-            if self.state == "CLOSED":
-                convinced = random.random() < (conviction_rate * 0.3)
-                # Determine if NPC became more receptive
-                became_more_receptive = random.random() < (conviction_rate * 0.4)
-                
-                if convinced:
-                    # NPC was convinced
-                    self.convinced = True
-                    was_convinced = True
-                    # Sequence: book -> convinced -> walking (to exit)
-                    self.set_animation_sequence(['book', 'convinced'])
+            # Verificar si el jugador ha superado el umbral crítico
+            player_influence = player.influence_percentage if player and hasattr(player, 'influence_percentage') else 0
+            critical_threshold = player.critical_influence_threshold if hasattr(player, 'critical_influence_threshold') else 87.0
+            player_energy = player.energy_percentage if player and hasattr(player, 'energy_percentage') else 100.0
+            
+            # Variable para marcar si se ha superado el umbral crítico
+            threshold_exceeded = player_influence >= critical_threshold
+            
+            # Cuando el jugador está por encima del umbral crítico:
+            # 1. Forzar convicción a 0 (no puede convencer a nadie)
+            # 2. Todos los NPCs pasan a estado CLOSED
+            if threshold_exceeded:
+                player.conviction_rate = 0  # Fuerza la convicción a cero
+                self.state = "CLOSED"
+                self.update_interaction_indicator()  # Actualizar color
+            
+            # Calculate the probability of successful conviction
+            if player:
+                if threshold_exceeded:
+                    convincing_result = False
                     
-                    # Increase player influence (success)
-                    if hasattr(player, 'update_influence'):
-                        player.update_influence(10.0)  # Bonus for convincing a closed NPC
+                    # Pérdida de energía fija por interacción
+                    energy_loss = -10.0
                     
-                    # Recover energy on success
-                    if hasattr(player, 'update_energy'):
-                        player.update_energy(-5.0)  # Negative value to recover energy
-                elif became_more_receptive:
-                    # NPC became more receptive (moves to indecisive)
-                    self.state = "INDECISIVE"
-                    # Sequence: book -> indecisive -> walking
-                    self.set_animation_sequence(['book', 'indecisive'])
+                    # Calcular interacciones restantes basadas en energía
+                    remaining_interactions = max(1, player_energy / abs(energy_loss))
                     
-                    # Increase a bit of influence (partial progress)
-                    if hasattr(player, 'update_influence'):
-                        player.update_influence(3.0)
+                    # Calcular pérdida de influencia proporcional
+                    influence_loss = -player_influence / remaining_interactions
                     
-                    # Consume less energy
-                    if hasattr(player, 'update_energy'):
-                        player.update_energy(4.0)
-                else:
-                    # NPC remains closed
-                    # Sequence: book -> closed -> walking
-                    self.set_animation_sequence(['book', 'closed'])
+                    # Aplicar pérdidas SIN límites mínimos/máximos
+                    player.update_energy(energy_loss)
+                    player.update_influence(influence_loss)
                     
-                    # No influence increase (failure)
-                    # Consume less energy for rejection
-                    if hasattr(player, 'update_energy'):
-                        player.update_energy(6.0)  # Lower energy cost
-                
-            elif self.state == "INDECISIVE":
-                convinced = random.random() < (conviction_rate * 0.6)
-                # Determine if NPC became more closed
-                became_more_closed = random.random() < (1 - conviction_rate * 0.7)
-                
-                if convinced:
-                    # NPC was convinced
-                    self.convinced = True
-                    was_convinced = True
-                    # Sequence: book -> convinced -> walking (to exit)
-                    self.set_animation_sequence(['book', 'convinced'])
-                    
-                    # Increase player influence
-                    if hasattr(player, 'update_influence'):
-                        player.update_influence(7.0)  # Bonus for convincing an indecisive NPC
-                    
-                    # Recover energy on success
-                    if hasattr(player, 'update_energy'):
-                        player.update_energy(-4.0)  # Negative value to recover energy
-                elif became_more_closed:
-                    # NPC became more closed
-                    self.state = "CLOSED"
-                    # Sequence: book -> closed -> walking
-                    self.set_animation_sequence(['book', 'closed'])
-                    
-                    # Lose a bit of influence for setback
-                    if hasattr(player, 'update_influence'):
-                        player.update_influence(-2.0)  # Loss for setback
-                    
-                    # Consume less energy
-                    if hasattr(player, 'update_energy'):
+                elif self.state == "RECEPTIVE":
+                    # Si el jugador está por encima del umbral crítico, siempre es rechazado
+                    if threshold_exceeded:
+                        convincing_result = False
+                    else:
+                        convincing_result = random.random() < 0.7 + (player_conviction * 0.3)
+                    # Lower energy cost for receptive NPCs
+                    player.update_energy(-2.5)
+                    # Add energy recovery when convincing a receptive NPC
+                    if convincing_result:
+                        player.update_energy(7.0)
+                        # Increase conviction rate for successful interaction
+                        player.increase_conviction_rate(0.02)
+                    else:
+                        # Decrease conviction rate for being rejected
+                        player.decrease_conviction_rate(0.01)
+                        # Decrease influence when rejected
+                        player.update_influence(-0.5)
+                elif self.state == "INDECISIVE":
+                    # Si el jugador está por encima del umbral crítico, siempre es rechazado
+                    if threshold_exceeded:
+                        convincing_result = False
+                    else:
+                        convincing_result = random.random() < 0.4 + (player_conviction * 0.3)
+                    # Medium energy cost for indecisive NPCs
+                    player.update_energy(-3.5)
+                    # Add energy recovery when convincing an indecisive NPC
+                    if convincing_result:
                         player.update_energy(5.0)
-                else:
-                    # NPC still indecisive
-                    # Sequence: book -> indecisive -> walking
-                    self.set_animation_sequence(['book', 'indecisive'])
-                    
-                    # Neither increase nor decrease influence
-                    # Consume normal energy
-                    if hasattr(player, 'update_energy'):
-                        player.update_energy(3.5)
-                
-            elif self.state == "RECEPTIVE":
-                convinced = random.random() < (conviction_rate * 0.9)
-                # Determine if NPC became more closed
-                became_more_closed = random.random() < (1 - conviction_rate * 0.9)
-                
-                if convinced:
-                    # NPC was convinced
-                    self.convinced = True
-                    was_convinced = True
-                    # Sequence: book -> convinced -> walking (to exit)
-                    self.set_animation_sequence(['book', 'convinced'])
-                    
-                    # Increase player influence
-                    if hasattr(player, 'update_influence'):
-                        player.update_influence(5.0)  # Bonus for convincing a receptive NPC
-                    
-                    # Recover energy on success
-                    if hasattr(player, 'update_energy'):
-                        player.update_energy(-3.0)  # Negative value to recover energy
-                elif became_more_closed:
-                    # NPC became more closed
-                    self.state = "INDECISIVE"
-                    # Sequence: book -> indecisive -> walking
-                    self.set_animation_sequence(['book', 'indecisive'])
-                    
-                    # Lose a bit of influence for setback
-                    if hasattr(player, 'update_influence'):
+                        # Increase conviction 
+                        player.increase_conviction_rate(0.01)
+                    else:
+                        # Decrease conviction when rejected
+                        player.decrease_conviction_rate(0.02)
+                        # Decrease influence when rejected
+                        player.update_influence(-0.7)
+                else:  # CLOSED
+                    # Even in closed state, always reject if influence is too high
+                    if threshold_exceeded:
+                        convincing_result = False
+                    else:
+                        convincing_result = random.random() < 0.2 + (player_conviction * 0.3)
+                    # Higher energy cost for closed NPCs
+                    player.update_energy(-5.0)
+                    # Add energy recovery when convincing a closed NPC
+                    if convincing_result:
+                        player.update_energy(8.0)
+                        # Increase conviction for hard success
+                        player.increase_conviction_rate(0.03)
+                    else:
+                        # Higher decrease on rejection
+                        player.decrease_conviction_rate(0.03)
+                        # Decrease influence when rejected
                         player.update_influence(-1.0)
-                    
-                    # Consume normal energy
-                    if hasattr(player, 'update_energy'):
-                        player.update_energy(3.0)
-                else:
-                    # No change in attitude but not convinced
-                    # Sequence: book -> indecisive -> walking (using indecisive as fallback)
-                    self.set_animation_sequence(['book', 'indecisive'])
-                    
-                    # Neither increase nor decrease influence
-                    # Consume normal energy
-                    if hasattr(player, 'update_energy'):
-                        player.update_energy(2.5)
+                
+                # Update player stats based on the interaction
+                if convincing_result:
+                    player.update_influence(5.0)
             
-            # Visual and sound feedback based on result
-            self.update_interaction_indicator()  # Update indicator color based on new state
+            # Start the animation sequence
+            # First "book" animation, then the result animation
+            animation_sequence = ["book"]
+            
+            # Update NPC state based on result
+            if convincing_result:
+                self.convinced = True
+                animation_sequence.append("convinced")
+                if self.state != "RECEPTIVE":
+                    self.state = "RECEPTIVE"
+                    # Update the interaction indicator with the new state
+                    self.update_interaction_indicator()
+            elif self.state == "INDECISIVE":
+                animation_sequence.append("indecisive")
+                # There's a chance the NPC becomes more closed
+                if random.random() < 0.3:
+                    self.state = "CLOSED"
+                    # Update the interaction indicator with the new state
+                    self.update_interaction_indicator()
+            else:
+                animation_sequence.append("closed")
+            
+            # Set the sequence
+            self.set_animation_sequence(animation_sequence)
+            
+            # Reset the interaction timer
+            self.interaction_timer = 0
             
             return True
-        
-        return False
 
     def get_player(self):
         """Gets the player instance from the manager. To be implemented by manager."""
@@ -589,14 +568,17 @@ class NPCManager:
         
         self.max_npcs = 23
         
-        self.spawn_offset_x = 100  # Increased from 20 to 100 to make them appear farther
+        self.spawn_offset_x = 100 
         
         self.interaction_active = False
         
         self.spawn_zones = []
         self.update_spawn_zones()
         
-        self.player = player  # Store the player instance
+        self.player = player
+        
+        # Variable para rastrear si todos los NPCs deben estar en estado CLOSED
+        self.all_npcs_closed = False
         
     def update_spawn_zones(self):
         """Updates spawn zones based on screen size."""
@@ -633,112 +615,89 @@ class NPCManager:
         
     def update(self, dt, player_rect, camera=None):
         """Update all NPCs and spawn new ones."""
-        self.spawn_timer += dt
-        if self.spawn_timer >= self.spawn_interval and len(self.npcs) < self.max_npcs:
-            self.spawn_timer = 0
-            self.spawn_npc(camera)
-        
-        # Check if any NPC is interacting
-        was_interaction_active = self.interaction_active
-        self.interaction_active = False
-        for npc in self.npcs:
-            if npc.is_interacting:
-                self.interaction_active = True
-                break
-        
-        # List of NPCs to respawn
-        npcs_to_respawn = []
-        
-        for npc in self.npcs:
-            # REMOVE COLLISION CHECK HERE to avoid continuous changes
-            # self.check_npc_collision(npc)
+        if self.interaction_active:
+            if not any(npc.is_interacting for npc in self.npcs):
+                self.interaction_active = False
+                
+        # Verificar si el jugador ha superado el umbral crítico
+        if self.player and hasattr(self.player, 'threshold_exceeded') and self.player.threshold_exceeded:
+            # Si el jugador superó el umbral, todos los NPCs deben estar en estado CLOSED
+            self.all_npcs_closed = True
             
-            # Call the original update method of the NPC
-            npc.update(dt=dt, screen_width=self.screen_width, camera=camera, other_npcs=self.npcs)
+            # Convertir a todos los NPCs existentes a estado CLOSED
+            for npc in self.npcs:
+                if npc.state != "CLOSED":
+                    npc.state = "CLOSED"
+                    npc.update_interaction_indicator()
+        
+        # Update all existing NPCs
+        for npc in list(self.npcs):  # Copy the list to avoid modification during iteration
+            original_position = pygame.math.Vector2(npc.rect.center)
             
-            # The interaction state is now updated in handle_interaction
-            # to show only the closest NPC
-                
-            # Check if the NPC is off-screen and needs to respawn
-            if camera:
-                player_center_x = camera.offset.x + (self.screen_width // 2)
-                player_center_y = camera.offset.y + (self.screen_height // 2)
-                
-                # Wider limits to respawn
-                left_bound = player_center_x - (self.screen_width // 2) - 150
-                right_bound = player_center_x + (self.screen_width // 2) + 150
-                top_bound = player_center_y - (self.screen_height // 2) - 150
-                bottom_bound = player_center_y + (self.screen_height // 2) + 150
-                
-                # If off-screen, add to the list to respawn
-                if (npc.rect.right < left_bound or npc.rect.left > right_bound or 
-                    npc.rect.bottom < top_bound or npc.rect.top > bottom_bound):
-                    npcs_to_respawn.append(npc)
-            else:
-                if npc.rect.right < -100 or npc.rect.left > self.screen_width + 100:
-                    npcs_to_respawn.append(npc)
+            # Update the NPC
+            npc.update(dt, self.screen_width, camera, [other_npc for other_npc in self.npcs if other_npc != npc])
+            
+            # If NPC is convinced, they will walk off screen
+            if npc.convinced:
+                # Check if they are far off-screen
+                screen_rect = pygame.Rect(0, 0, self.screen_width, camera.height if camera else 600)
+                if not screen_rect.colliderect(npc.rect):
+                    # Remove this NPC and spawn a replacement
+                    self.npcs.remove(npc)
+                    self.spawn_npc(camera)
         
-        # Respawn all off-screen NPCs
-        for npc in npcs_to_respawn:
-            self.respawn_npc(npc, camera)
-        
-        # If the player is no longer interacting with any NPC, update statistics
-        if was_interaction_active and not self.interaction_active and self.player:
-            # Check if the player has the update_gameplay_stats method before calling it
-            if hasattr(self.player, 'update_gameplay_stats'):
-                self.player.update_gameplay_stats(dt, rejected=False)
-                    
+        # Spawn new NPCs if needed
+        if len(self.npcs) < self.max_npcs:
+            self.spawn_timer += dt
+            if self.spawn_timer >= self.spawn_interval:
+                self.spawn_timer = 0
+                self.spawn_npc(camera)
+    
     def handle_interaction(self, player_rect, keys):
         """Handle player interaction with NPCs."""
         if self.interaction_active:
-            return False
+            interacting_npcs = [npc for npc in self.npcs if npc.is_interacting]
+            if not interacting_npcs:
+                self.interaction_active = False
             
-        # Check if at least one NPC has can_interact=True
-        has_interactable = False
-        
-        # First pass: find all NPCs that could be interacted with
-        can_interact_npcs = []
-        for npc in self.npcs:
-            if not npc.is_interacting and player_rect.colliderect(npc.rect.inflate(40, 40)):
-                can_interact_npcs.append(npc)
-                
-        # If none found, exit
-        if not can_interact_npcs:
-            # Make sure no NPC has the indicator shown
-            for npc in self.npcs:
-                npc.can_interact = False
-            return False
-            
-        # Find the closest NPC to the player
-        nearest_npc = None
+        # Mostrar el indicador de interacción solo en el NPC más cercano que está lo suficientemente cerca
+        closest_npc = None
         min_distance = float('inf')
-        player_center = pygame.math.Vector2(player_rect.center)
         
-        for npc in can_interact_npcs:
-            npc_center = pygame.math.Vector2(npc.rect.center)
-            distance = player_center.distance_to(npc_center)
-            
-            if distance < min_distance:
-                min_distance = distance
-                nearest_npc = npc
-        
-        # Now only show the indicator for the nearest NPC
         for npc in self.npcs:
-            npc.can_interact = (npc == nearest_npc)
-        
-        # Check if player pressed the interaction key
-        interacted = False
-        if nearest_npc and keys[pygame.K_e]:
-            # Use the attack method directly instead of set_animation
-            if self.player:
-                self.player.attack()
+            if npc.convinced or npc.is_interacting:
+                continue  # Skip NPCs that are already convinced
+                
+            # Calcular la distancia entre el jugador y el NPC
+            dx = player_rect.centerx - npc.rect.centerx
+            dy = player_rect.centery - npc.rect.centery
+            distance = (dx**2 + dy**2)**0.5
             
-            if nearest_npc.interact(self.player):
+            if distance < 100 and distance < min_distance:  # Radio de 100 píxeles para interacción
+                min_distance = distance
+                closest_npc = npc
+                
+        # Desactivar indicadores en todos los NPCs excepto el más cercano
+        for npc in self.npcs:
+            npc.can_interact = (npc == closest_npc and not self.interaction_active)
+                
+        # Activar el indicador solo en el NPC más cercano
+        if closest_npc:
+            closest_npc.can_interact = True
+            
+            # Interactuar si se presionó la tecla E
+            if closest_npc and keys[pygame.K_e] and not self.interaction_active:
                 self.interaction_active = True
-                interacted = True
-        
-        return interacted
-    
+                if self.player and hasattr(self.player, 'threshold_exceeded') and self.player.threshold_exceeded:
+                    self.player.attack()
+                    closest_npc.interact(self.player)
+                    return
+                
+                # Interacción normal
+                self.interaction_active = True
+                if closest_npc.interact(self.player):  # Si la interacción tuvo éxito
+                    closest_npc.convinced = True
+
     def draw(self, screen, camera):
         """Draw all NPCs and their interaction indicators."""
         # Sort NPCs by Y position for proper Z-index rendering
@@ -754,92 +713,55 @@ class NPCManager:
         """Spawn a new NPC at the right or left edge of the screen."""
         if len(self.npcs) >= self.max_npcs:
             return
+        
+        speed = random.randint(8, 12) * 10  # Velocidad entre 80-120
+        direction = random.choice([-1, 1])
+        
+        # Define the position offsets based on screen dimensions
+        position_x = 0
+        if direction > 0:  # Moving to the right
+            position_x = -100  # Start off-screen to the left
+        else:  # Moving to the left
+            position_x = self.screen_width + 100  # Start off-screen to the right
             
-        # Create a new NPC with the correct speed
-        npc = NPC(
-            pos=(0, 0),
-            animation_paths=self.animation_paths,
-            speed=120,  # Make sure to use the correct speed
-            scale=0.5,
-            direction=1
+        # Choose a random zone to spawn
+        zone = random.choice(self.spawn_zones)
+        position_y = zone + random.randint(-50, 50)  # El valor de zone es directamente la altura Y
+        
+        # Adjust position based on camera
+        if camera:
+            position_x += camera.offset.x
+            position_y += camera.offset.y
+        
+        new_npc = NPC(
+            (position_x, position_y),
+            self.animation_paths,
+            speed=speed,
+            scale=0.5,  # Same scale as player
+            direction=direction
         )
         
         # Set the player instance for the NPC
         if self.player:
-            npc.get_player = lambda: self.player
-        else:
-            npc.get_player = lambda: None
+            new_npc.get_player = lambda: self.player
         
-        # Save current states to keep them after updating the position
-        current_convinced = npc.convinced
-        current_state = npc.state
+        # Si el jugador ha superado el umbral, todos los nuevos NPCs deben estar en estado CLOSED
+        if self.all_npcs_closed:
+            new_npc.state = "CLOSED"
+            new_npc.update_interaction_indicator()
         
-        if camera:
-            player_center_x = camera.offset.x + (self.screen_width // 2)
-            player_center_y = camera.offset.y + (self.screen_height // 2)
+        # Check if new NPC is too close to existing NPCs
+        for npc in self.npcs:
+            dx = new_npc.rect.centerx - npc.rect.centerx
+            dy = new_npc.rect.centery - npc.rect.centery
+            distance = (dx**2 + dy**2)**0.5
             
-            # Only use left and right sides for better distribution
-            spawn_side = random.choice([1, 3])  # 1=right, 3=left
-            
-            if spawn_side == 1:  # Right
-                spawn_x = player_center_x + (self.screen_width // 2) + self.spawn_offset_x
-                spawn_y = player_center_y + random.randint(-self.screen_height//3, self.screen_height//3)
-                new_direction = -1  # Towards the left
-            else:  # Left
-                spawn_x = player_center_x - (self.screen_width // 2) - self.spawn_offset_x
-                spawn_y = player_center_y + random.randint(-self.screen_height//3, self.screen_height//3)
-                new_direction = 1  # Towards the right
-        else:
-            # If no camera, use the old method
-            spawn_from_left = random.choice([True, False])
-            
-            # Use one of the spawn zones for the Y position
-            if self.spawn_zones:
-                spawn_y = random.choice(self.spawn_zones)
-            else:
-                spawn_y = self.screen_height // 2 + random.randint(-100, 100)
-            
-            if spawn_from_left:
-                spawn_x = -self.spawn_offset_x
-                new_direction = 1
-            else:
-                spawn_x = self.screen_width + self.spawn_offset_x
-                new_direction = -1
+            if distance < 100:  # Minimum distance of 100 pixels
+                # Try again with a different position
+                return self.spawn_npc(camera)
         
-        # Check that it's not too close to other NPCs
-        too_close = False
-        new_pos = pygame.math.Vector2(spawn_x, spawn_y)
-        
-        for other_npc in self.npcs:
-            if other_npc != npc:
-                other_pos = pygame.math.Vector2(other_npc.rect.centerx, other_npc.rect.centery)
-                if new_pos.distance_to(other_pos) < 100:  # Increase the minimum distance to 100px
-                    too_close = True
-                    break
-        
-        if too_close:
-            # If too close, try a slightly different position
-            spawn_x += random.randint(-70, 70)
-            spawn_y += random.randint(-70, 70)
-        
-        # Update position and direction
-        npc.rect.center = (spawn_x, spawn_y)
-        npc._float_pos = pygame.math.Vector2(npc.rect.x, npc.rect.y)
-        npc.direction.x = new_direction
-        npc.facing_right = new_direction > 0
-        
-        # Reset stuck state
-        npc.stuck_timer = 0
-        npc.last_position = pygame.math.Vector2(npc.rect.center)
-        
-        # If it was convinced, keep that state
-        npc.convinced = current_convinced
-        npc.state = current_state
-        
-        # Add to the list of NPCs
-        self.npcs.add(npc)
-        
-        return npc
+        self.npcs.add(new_npc)
+        return new_npc
 
     def respawn_npc(self, npc, camera=None):
         """Repositions an NPC at a random edge of the screen relative to the player."""
