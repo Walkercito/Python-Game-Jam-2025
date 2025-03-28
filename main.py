@@ -27,11 +27,11 @@ class Game:
             'attack': './src/assets/player/interact',
         }
         self.npc_animation_paths = {
-            'idle': './src/assets/player/idle',
             'walking': './src/assets/npc/walking',
+            'convinced_walking': "./src/assets/npc/convinced_walk",
             'book': './src/assets/npc/reaction',
-            'convinced': './src/assets/player/idle',
-            'indecisive': './src/assets/player/idle',
+            'convinced': './src/assets/npc/convinced',
+            'indecisive': './src/assets/npc/reaction',
             'closed': './src/assets/player/idle',
         }
 

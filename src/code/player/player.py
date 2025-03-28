@@ -406,7 +406,7 @@ class Player(pygame.sprite.Sprite):
         # Labels for the bars
         font_size = int(16 * scale)
         try:
-            font = pygame.font.SysFont('Arial', font_size)
+            font = pygame.font.Font('./src/assets/fonts/SpecialElite-Regular.ttf', font_size)
             influence_label = font.render('Influence', True, (255, 255, 255))
             energy_label = font.render('Energy', True, (255, 255, 255))
         except Exception as e:
