@@ -133,7 +133,7 @@ class GameView:
             energy_factor = self.player.energy_percentage / 100.0
             
             # Reduce light intensity based on energy
-            self.lighting.light_radius = max(10, min(self.camera.width, self.camera.height) * 0.3 * energy_factor)
+            self.lighting.light_radius = max(10, min(self.camera.width, self.camera.height) * 0.18 * energy_factor)  # Reducido de 0.3 a 0.18
             self.lighting.light_intensity = max(50, 255 * energy_factor)
             self.lighting.generate_light_texture()
 

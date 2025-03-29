@@ -14,9 +14,9 @@ class LightingSystem:
         
         self.light_surface = pygame.Surface((screen_width, screen_height), pygame.SRCALPHA)
         
-        self.light_radius = min(screen_width, screen_height) * 0.25
+        self.light_radius = min(screen_width, screen_height) * 0.15 
         self.ambient_light = 10  # 0-255, 0 is completely dark
-        self.light_intensity = 255  # Maximum light intensity
+        self.light_intensity = 255 
         
         self.wobble_amount = 2.0
         self.wobble_speed = 0.05
@@ -52,8 +52,7 @@ class LightingSystem:
         self.light_surface = pygame.Surface((new_width, new_height), pygame.SRCALPHA)
         
         old_radius = self.light_radius
-        self.light_radius = min(new_width, new_height) * 0.25
-        
+        self.light_radius = min(new_width, new_height) * 0.15
         if abs(self.light_radius - old_radius) > 5:
             self.generate_light_texture()
     
