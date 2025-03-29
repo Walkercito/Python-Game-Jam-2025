@@ -3,6 +3,9 @@
 import pygame
 import os
 
+# Importar la variable global
+from src.code.npc.npc import THRESHOLD_REACHED
+
 
 class Player(pygame.sprite.Sprite):
     """Handles the logic and animations of the player."""
@@ -41,8 +44,8 @@ class Player(pygame.sprite.Sprite):
         self.influence_percentage = 0.0  # Starts at 0%
         self.energy_percentage = 100.0   # Starts at 100%
         self.critical_influence_threshold = 87.0  
-        self.energy_decay_rate = 0.3
-        self.energy_decay_multiplier = 1.0 
+        self.energy_decay_rate = 0.15  
+        self.energy_decay_multiplier = 0.8  
         self.convinced_npcs_count = 0   
         self.special_ending_triggered = False 
         self.game_over = False  
@@ -284,21 +287,28 @@ class Player(pygame.sprite.Sprite):
             dt: Time elapsed since last frame in seconds
             rejected: Whether the player was just rejected by an NPC
         """
-        # Update energy
+        global THRESHOLD_REACHED
+        
+        # Check if critical threshold has been reached
+        if self.influence_percentage >= self.critical_influence_threshold:
+            THRESHOLD_REACHED = True
+        
         decay_rate = self.energy_decay_rate
         
-        # Increase decay rate if player was rejected or if above critical influence
-        if rejected or self.influence_percentage >= self.critical_influence_threshold:
+        if rejected or THRESHOLD_REACHED:
             decay_rate *= self.energy_decay_multiplier
             
-            # Aumentar gradualmente el multiplicador de decaimiento cuando se supera el umbral
-            if self.influence_percentage >= self.critical_influence_threshold:
-                self.energy_decay_multiplier = min(3.0, self.energy_decay_multiplier + 0.05)  # Reducido de 5.0 a 3.0 y de 0.1 a 0.05
-            
-        # Apply energy decay
+            # Gradually increase decay multiplier after threshold
+            if THRESHOLD_REACHED:
+                self.energy_decay_multiplier = min(2.0, self.energy_decay_multiplier + 0.03)
+        
         self.energy_percentage = max(0.0, self.energy_percentage - (decay_rate * dt))
         
-        # Check for game over conditions
+        # If threshold reached, decrease influence over time
+        if THRESHOLD_REACHED:
+            influence_decay_rate = decay_rate * 0.5
+            self.influence_percentage = max(0.0, self.influence_percentage - (influence_decay_rate * dt))
+        
         if self.energy_percentage <= 0 and not self.game_over:
             self.game_over = True
             
@@ -329,8 +339,8 @@ class Player(pygame.sprite.Sprite):
         Args:
             amount: Amount to adjust energy (percentage points)
         """
-        # Actualizar la energía (valores negativos de amount aumentan la energía, positivos la reducen)
-        self.energy_percentage = max(0.0, min(100.0, self.energy_percentage - amount))  # Limitamos a máximo 100%
+        # Update energy (negative values increase energy, positive values decrease it)
+        self.energy_percentage = max(0.0, min(100.0, self.energy_percentage - amount))  # Limit to maximum 100%
         
         # Check for game over
         if self.energy_percentage <= 0 and not self.game_over:
