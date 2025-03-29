@@ -30,7 +30,7 @@ class Player(pygame.sprite.Sprite):
         # Add a flag to control interaction animation
         self.is_interacting = False
         self.interaction_timer = 0
-        self.interaction_duration = 0  # No longer used, now controlled by frames
+        self.interaction_duration = 0
         
         # Store the total number of frames in the attack animation
         # to know when it ends
@@ -40,19 +40,18 @@ class Player(pygame.sprite.Sprite):
         # Gameplay attributes
         self.influence_percentage = 0.0  # Starts at 0%
         self.energy_percentage = 100.0   # Starts at 100%
-        self.critical_influence_threshold = 87.0  # When reached, NPCs start rejecting
-        self.energy_decay_rate = 0.5     # How fast energy decays passively per second
-        self.energy_decay_multiplier = 1.0  # Used to increase decay rate on rejection
-        self.convinced_npcs_count = 0    # Count of NPCs successfully convinced
-        self.special_ending_triggered = False  # Flag for the special ending
-        self.game_over = False  # Flag to indicate if the game is over
+        self.critical_influence_threshold = 87.0  
+        self.energy_decay_rate = 0.3
+        self.energy_decay_multiplier = 1.0 
+        self.convinced_npcs_count = 0   
+        self.special_ending_triggered = False 
+        self.game_over = False  
 
         if self.current_animation in self.animation_frames and len(self.animation_frames[self.current_animation]) > 0:
             self.image = self.animation_frames[self.current_animation][0]['original']
         else:
-            # Create a fallback image if animations aren't loaded
             self.image = pygame.Surface((32, 32))
-            self.image.fill((255, 0, 255))  # Magenta for visibility
+            self.image.fill((255, 0, 255))
             
         self.rect = self.image.get_rect(center=pos)
 
@@ -61,7 +60,6 @@ class Player(pygame.sprite.Sprite):
         for animation_name, path in animation_paths.items():
             frames = []
             
-            # Safety check for path existence
             if not os.path.exists(path):
                 print(f"Warning: Animation path does not exist: {path}")
                 continue
@@ -134,14 +132,11 @@ class Player(pygame.sprite.Sprite):
                 
                 # Handle attack animation specifically
                 if self.is_interacting and self.current_animation == 'attack':
-                    # Increment attack animation frame counter
                     self.attack_frame_current += 1
                     
-                    # Move to the next frame, but do not cycle if it's an attack
                     if self.frame_index < frames_count - 1:
                         self.frame_index += 1
                     else:
-                        # Attack animation has ended, switch back to idle
                         self.is_interacting = False
                         self.set_animation('idle')
                         break
@@ -170,7 +165,6 @@ class Player(pygame.sprite.Sprite):
                 self.is_interacting = False
                 # Switch back to idle animation
                 self.set_animation('idle')
-                # Do not restore previous direction to prevent automatic movement after interaction
         
         # Update animation
         self.animate(dt)
@@ -297,9 +291,9 @@ class Player(pygame.sprite.Sprite):
         if rejected or self.influence_percentage >= self.critical_influence_threshold:
             decay_rate *= self.energy_decay_multiplier
             
-            # Rapidly increase the decay multiplier when above threshold
+            # Aumentar gradualmente el multiplicador de decaimiento cuando se supera el umbral
             if self.influence_percentage >= self.critical_influence_threshold:
-                self.energy_decay_multiplier = min(5.0, self.energy_decay_multiplier + 0.1)
+                self.energy_decay_multiplier = min(3.0, self.energy_decay_multiplier + 0.05)  # Reducido de 5.0 a 3.0 y de 0.1 a 0.05
             
         # Apply energy decay
         self.energy_percentage = max(0.0, self.energy_percentage - (decay_rate * dt))
@@ -335,8 +329,8 @@ class Player(pygame.sprite.Sprite):
         Args:
             amount: Amount to adjust energy (percentage points)
         """
-        # In this case, we are always consuming energy (negative value)
-        self.energy_percentage = max(0.0, self.energy_percentage - amount)
+        # Actualizar la energía (valores negativos de amount aumentan la energía, positivos la reducen)
+        self.energy_percentage = max(0.0, min(100.0, self.energy_percentage - amount))  # Limitamos a máximo 100%
         
         # Check for game over
         if self.energy_percentage <= 0 and not self.game_over:
@@ -392,11 +386,11 @@ class Player(pygame.sprite.Sprite):
             screen: Surface to draw on
             scale: UI scale factor
         """
-        # Constants for bar dimensions and positions
-        bar_width = int(300 * scale)  # Wider bars (previously 200)
-        bar_height = int(15 * scale)  # Taller bars (previously 10)
-        padding = int(20 * scale)  # More padding
-        corner_radius = int(5 * scale)  # More rounded corners
+
+        bar_width = int(300 * scale) 
+        bar_height = int(15 * scale) 
+        padding = int(20 * scale) 
+        corner_radius = int(5 * scale)
         
         # Position the bars in the bottom left corner
         screen_width, screen_height = screen.get_size()

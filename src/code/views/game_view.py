@@ -54,6 +54,8 @@ class GameView:
             # Initialize the lighting system
             print("GameView.__init__: Inicializando sistema de iluminación...")
             self.lighting = LightingSystem(current_width, current_height)
+            self.threshold_light_radius = None 
+            self.threshold_reached = False  
             print("GameView.__init__: Sistema de iluminación inicializado")
             
             print("GameView.__init__: Creando NPCManager...")
@@ -127,15 +129,30 @@ class GameView:
         self.npc_manager.update(dt, self.player.rect, self.camera)
         self.lighting.update(self.player.rect.center, self.camera, dt)
         
-        # If player reaches critical influence, start reducing light radius
-        if self.player.influence_percentage >= self.player.critical_influence_threshold:
-            # Calculate a factor (0.0-1.0) of how far energy has depleted
-            energy_factor = self.player.energy_percentage / 100.0
+        base_max_radius = min(self.camera.width, self.camera.height) * 0.35
+        
+        if not self.threshold_reached:
+            influence_factor = self.player.influence_percentage / self.player.critical_influence_threshold
+            min_radius = base_max_radius * 0.5
             
-            # Reduce light intensity based on energy
-            self.lighting.light_radius = max(10, min(self.camera.width, self.camera.height) * 0.18 * energy_factor)  # Reducido de 0.3 a 0.18
+            adjusted_factor = influence_factor ** 0.7
+            
+            self.lighting.light_radius = min_radius + (base_max_radius - min_radius) * adjusted_factor
+            
+            if self.player.influence_percentage >= self.player.critical_influence_threshold:
+                self.threshold_light_radius = self.lighting.light_radius
+                self.threshold_reached = True
+        
+        if self.threshold_reached:
+            energy_factor = self.player.energy_percentage / 100.0
+            if self.threshold_light_radius is not None:
+                self.lighting.light_radius = max(10, self.threshold_light_radius * energy_factor)
+            else:
+                self.lighting.light_radius = max(10, base_max_radius * energy_factor)
+            
             self.lighting.light_intensity = max(50, 255 * energy_factor)
-            self.lighting.generate_light_texture()
+
+        self.lighting.generate_light_texture()
 
     def draw(self, screen):
         """Draws game elements."""
