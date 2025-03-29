@@ -35,7 +35,7 @@ class IntroScreen:
         
         # Prepare text
         self.pygame_text = self.font_large.render("Made with pygame-ce", True, (255, 255, 255))
-        self.team_text = self.font_large.render("Qva Team", True, (255, 255, 255))
+        self.team_text = self.font_large.render("QvaX Team", True, (255, 255, 255))
         
         # Centering rectangles
         self.pygame_rect = self.pygame_text.get_rect(center=(self.current_width//2, self.current_height//2))
