@@ -32,7 +32,7 @@ class Game:
             'book': './src/assets/npc/reaction',
             'convinced': './src/assets/npc/convinced',
             'indecisive': './src/assets/npc/reaction',
-            'closed': './src/assets/player/idle',
+            'closed': './src/assets/npc/closed',
         }
 
         self.design_width = const.width
