@@ -299,6 +299,19 @@ class Game:
                 if hasattr(self, 'transition_screen') and self.transition_screen:
                     self.transition_screen.update_progress(progress)
                     
+                # Generar texturas de luz pre-renderizadas al 50% de la carga
+                if i == int(steps * 0.5):
+                    try:
+                        # Crear una instancia temporal de LightingSystem para generar las texturas
+                        from src.code.lighting import LightingSystem
+                        temp_lighting = LightingSystem(self.screen_width, self.screen_height)
+                        # Generar las texturas pre-renderizadas
+                        temp_lighting.generate_baked_light_textures(num_steps=20)
+                        await asyncio.sleep(0.1)  # Dar tiempo para que se generen las texturas
+                    except Exception as e:
+                        print(f"Error al generar texturas de luz pre-renderizadas: {e}")
+                        traceback.print_exc()
+                
                 # Create GameView at 80% of the load
                 if i == int(steps * 0.8):
                     try:
@@ -311,6 +324,11 @@ class Game:
                             font=self.font,
                             show_fps=self.show_fps
                         )
+                        
+                        # Activar el modo de luces pre-renderizadas si está habilitado
+                        import constants as const
+                        if const.use_baked_lights and hasattr(self.current_view, 'lighting'):
+                            self.current_view.lighting.set_baked_lights_mode(True)
                         
                         # Check if game state needs to be restored
                         if os.path.exists("src/save/current_game.json"):

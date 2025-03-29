@@ -188,7 +188,13 @@ class GameView:
             npc.draw_interaction_indicator(temp_surface, self.camera)
         
         screen.blit(temp_surface, (0, 0))
-        self.lighting.draw(screen)
+        # Pasar los valores de influencia, energía y estado del umbral al método draw
+        self.lighting.draw(
+            screen, 
+            influence=self.player.influence_percentage, 
+            energy=self.player.energy_percentage, 
+            threshold_reached=self.threshold_reached
+        )
         
         # Draw player stats (influence and energy bars)
         scale_factor = min(screen.get_width() / self.design_width, screen.get_height() / self.design_height)

@@ -57,11 +57,13 @@ class Settings:
         # Get current settings from game state
         self.fullscreen = False
         self.show_fps = True
+        self.use_baked_lights = False
         
         if self.get_game_state:
             game_state = self.get_game_state()
             self.fullscreen = game_state.get('fullscreen', False)
             self.show_fps = game_state.get('show_fps', True)
+            self.use_baked_lights = game_state.get('use_baked_lights', False)
         
         self.create_buttons()
     
@@ -140,6 +142,22 @@ class Settings:
             use_9slice = True
         ))
         
+        y_position += 200
+        baked_lights_text = "Baked Lights: ON" if self.use_baked_lights else "Baked Lights: OFF"
+        if not self.is_ingame:
+            self.buttons.append(Button(
+                text = baked_lights_text,
+                x = self.design_width//2 - 150,
+                y = y_position,
+                width = 300,
+                height = 60,
+                on_click = self.toggle_baked_lights_option,
+                image_path = button_border,
+                border_size = 12,
+                use_9slice = True
+            ))
+        
+        y_position += 100
         static_menu_text = "Static menu: ON" if const.use_static_menu else "Static menu: OFF"
         
         if not self.is_ingame:
@@ -173,7 +191,21 @@ class Settings:
         self.show_fps = not self.show_fps
         
         fps_text = "Show FPS: ON" if self.show_fps else "Show FPS: OFF"
-        self.buttons[-1].text = fps_text
+        # Actualizar el índice del botón FPS (ahora no es el último debido al botón de Baked Lights)
+        fps_button_index = 3 if self.is_ingame else 2
+        self.buttons[fps_button_index].text = fps_text
+        
+    def toggle_baked_lights_option(self):
+        """Toggles the baked lights setting and updates the button text."""
+        import constants as const
+        
+        self.use_baked_lights = not self.use_baked_lights
+        const.use_baked_lights = self.use_baked_lights
+        
+        baked_lights_text = "Baked Lights: ON" if self.use_baked_lights else "Baked Lights: OFF"
+        # El botón de Baked Lights es el penultimo (antes del Static Menu)
+        baked_lights_button_index = 4 if self.is_ingame else 3
+        self.buttons[baked_lights_button_index].text = baked_lights_text
     
     def toggle_static_menu_option(self):
         """Toggles the static menu setting and updates the button text."""
@@ -221,12 +253,16 @@ class Settings:
         # Center all option buttons
         fullscreen_button_index = 2 if self.is_ingame else 1
         fps_button_index = 3 if self.is_ingame else 2
+        baked_lights_button_index = 4 if self.is_ingame else 3
         
         if len(self.buttons) > fullscreen_button_index:
             self.buttons[fullscreen_button_index].rect.centerx = new_width // 2
             
         if len(self.buttons) > fps_button_index:
             self.buttons[fps_button_index].rect.centerx = new_width // 2
+            
+        if len(self.buttons) > baked_lights_button_index:
+            self.buttons[baked_lights_button_index].rect.centerx = new_width // 2
         
         # Properly center the static menu button
         if not self.is_ingame and hasattr(self, 'static_menu_btn_index'):

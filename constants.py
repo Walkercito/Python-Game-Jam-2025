@@ -31,3 +31,6 @@ overlay_image = None
 static_menu_frame = None
 use_static_menu = False 
 static_menu_frame_index = 17
+
+use_baked_lights = False
+baked_light_textures = {}
