@@ -54,6 +54,9 @@ class GameView:
             # Initialize the lighting system
             print("GameView.__init__: Inicializando sistema de iluminación...")
             self.lighting = LightingSystem(current_width, current_height)
+            # Cambios para la luz optimizada
+            self.lighting.generate_baked_light_textures()  # Pre-genera texturas
+            self.lighting.set_baked_lights_mode(True)      # Habilita modo optimizado
             self.threshold_light_radius = None 
             self.threshold_reached = False  
             print("GameView.__init__: Sistema de iluminación inicializado")
@@ -132,26 +135,13 @@ class GameView:
         base_max_radius = min(self.camera.width, self.camera.height) * 0.35
         
         if not self.threshold_reached:
-            influence_factor = self.player.influence_percentage / self.player.critical_influence_threshold
-            min_radius = base_max_radius * 0.5
-            
-            adjusted_factor = influence_factor ** 0.7
-            
-            self.lighting.light_radius = min_radius + (base_max_radius - min_radius) * adjusted_factor
-            
-            if self.player.influence_percentage >= self.player.critical_influence_threshold:
-                self.threshold_light_radius = self.lighting.light_radius
-                self.threshold_reached = True
+            # El sistema baked ahora maneja automáticamente estos cálculos
+            pass
+        else:
+            # El sistema baked maneja los ajustes basados en energía
+            pass
         
-        if self.threshold_reached:
-            energy_factor = self.player.energy_percentage / 100.0
-            if self.threshold_light_radius is not None:
-                self.lighting.light_radius = max(10, self.threshold_light_radius * energy_factor)
-            else:
-                self.lighting.light_radius = max(10, base_max_radius * energy_factor)
-            
-            self.lighting.light_intensity = max(50, 255 * energy_factor)
-
+        # Generación de textura (necesaria para ambos modos)
         self.lighting.generate_light_texture()
 
     def draw(self, screen):
@@ -253,6 +243,7 @@ class GameView:
         
         self.camera.force_center = True
         self.lighting.resize(new_width, new_height)
+        self.lighting.generate_baked_light_textures()  # Regenera texturas para el nuevo tamaño
 
         self.npc_manager.screen_width = new_width
         self.npc_manager.screen_height = new_height
@@ -285,6 +276,7 @@ class GameView:
             self.lighting.generate_light_texture()         
         
         self.lighting.resize(screen_width, screen_height)
+        self.lighting.generate_baked_light_textures()  # Actualiza texturas para el nuevo modo
         
         # Update camera dead zone
         self.camera.dead_zone_x = self.camera.width * self.camera.dead_zone_percent
